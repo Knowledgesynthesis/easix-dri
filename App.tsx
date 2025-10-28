@@ -24,7 +24,7 @@ const EXAMPLE_DATA: LabRow[] = [
 
 const App: React.FC = () => {
     const [labRows, setLabRows] = useState<LabRow[]>([]);
-    const [directEntry, setDirectEntry] = useState<DirectEntry>({ day: '', value: '', type: 'log2' });
+    const [directEntries, setDirectEntries] = useState<DirectEntry[]>([]);
     const [manualSlope, setManualSlope] = useState('');
     const [dri, setDri] = useState<DRI | ''>('');
     const [prophylaxis, setProphylaxis] = useState<Prophylaxis | ''>('');
@@ -32,7 +32,14 @@ const App: React.FC = () => {
     const [results, setResults] = useState<CalculationResult | null>(null);
     const [showPointsTable, setShowPointsTable] = useState(false);
 
-    const calculation = useEasixCalculation(labRows, directEntry, manualSlope);
+    const calculation = useEasixCalculation(labRows, directEntries, manualSlope);
+
+    // Calculate normal ranges for EASIX and LOG2EASIX
+    // Based on lab normal ranges: LDH (140-280), Creatinine (0.6-1.3), Platelets (150-400)
+    const NORMAL_EASIX_MIN = (140 * 0.6) / 400; // ~0.21
+    const NORMAL_EASIX_MAX = (280 * 1.3) / 150; // ~2.427
+    const NORMAL_LOG2EASIX_MIN = Math.log(NORMAL_EASIX_MIN) / Math.log(2); // ~-2.252
+    const NORMAL_LOG2EASIX_MAX = Math.log(NORMAL_EASIX_MAX) / Math.log(2); // ~1.279
 
     const addRow = () => {
         setLabRows(prev => [...prev, { id: crypto.randomUUID(), day: '', ldh: '', creatinine: '', platelets: '' }]);
@@ -43,14 +50,30 @@ const App: React.FC = () => {
     const updateRow = (id: string, field: keyof Omit<LabRow, 'id'>, value: string) => {
         setLabRows(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
-    
+
+    const addDirectEntry = () => {
+        setDirectEntries(prev => [...prev, { id: crypto.randomUUID(), day: '', value: '', type: 'log2' }]);
+    };
+    const removeDirectEntry = (id: string) => {
+        setDirectEntries(prev => prev.filter(entry => entry.id !== id));
+    };
+    const updateDirectEntry = (id: string, field: keyof Omit<DirectEntry, 'id'>, value: string) => {
+        setDirectEntries(prev => prev.map(entry => entry.id === id ? { ...entry, [field]: value } : entry));
+    };
+
     const handleCompute = () => {
         setResults(calculation);
     };
-    
+
+    const handleClear = () => {
+        setLabRows([]);
+        setDirectEntries([]);
+        setResults(null);
+    };
+
     const loadExample = () => {
         setLabRows(EXAMPLE_DATA.map(r => ({...r, id: crypto.randomUUID()})));
-        setDirectEntry({ day: '', value: '', type: 'log2' });
+        setDirectEntries([]);
         setManualSlope('');
         setResults(null);
     }
@@ -146,15 +169,39 @@ const App: React.FC = () => {
                              <h2 className="text-lg font-semibold mb-2 text-white">2. Optional Overrides & Factors</h2>
                              <div className="space-y-2">
                                  <div>
-                                     <label className="block text-xs font-medium text-gray-300 mb-0.5">Direct Entry</label>
-                                     <div className="flex gap-1">
-                                         <input type="number" placeholder="Day" value={directEntry.day} onChange={e => setDirectEntry(d => ({...d, day: e.target.value}))} className="w-1/3 bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500"/>
-                                         <input type="number" step="0.01" placeholder="Value" value={directEntry.value} onChange={e => setDirectEntry(d => ({...d, value: e.target.value}))} className="w-1/3 bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500"/>
-                                         <select value={directEntry.type} onChange={e => setDirectEntry(d => ({...d, type: e.target.value as 'easix' | 'log2'}))} className="w-1/3 bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
-                                            <option value="log2">log₂(EASIX)</option>
-                                            <option value="easix">EASIX</option>
-                                         </select>
+                                     <label className="block text-xs font-medium text-gray-300 mb-1">Direct Entry</label>
+                                     <div className="space-y-2">
+                                         {directEntries.map((entry) => (
+                                             <div key={entry.id} className="bg-gray-900/50 p-2 rounded-md">
+                                                 <div className="flex justify-between items-center mb-1">
+                                                     <label className="text-xs font-medium text-gray-300">Direct entry</label>
+                                                     <button onClick={() => removeDirectEntry(entry.id)} className="text-red-400 hover:text-red-300 transition-colors"><TrashIcon /></button>
+                                                 </div>
+                                                 <div className="grid grid-cols-3 gap-1">
+                                                     <div>
+                                                         <input type="number" placeholder="Day" value={entry.day} onChange={e => updateDirectEntry(entry.id, 'day', e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500"/>
+                                                     </div>
+                                                     <div>
+                                                         <input type="number" step="0.01" placeholder="Value" value={entry.value} onChange={e => updateDirectEntry(entry.id, 'value', e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500"/>
+                                                         <MiniGauge
+                                                             value={parseFloat(entry.value) || null}
+                                                             range={entry.type === 'easix' ? [NORMAL_EASIX_MIN, NORMAL_EASIX_MAX] : [NORMAL_LOG2EASIX_MIN, NORMAL_LOG2EASIX_MAX]}
+                                                             label="Normal"
+                                                         />
+                                                     </div>
+                                                     <div>
+                                                         <select value={entry.type} onChange={e => updateDirectEntry(entry.id, 'type', e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
+                                                            <option value="log2">log₂(EASIX)</option>
+                                                            <option value="easix">EASIX</option>
+                                                         </select>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         ))}
                                      </div>
+                                     <button onClick={addDirectEntry} className="mt-2 flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
+                                         <PlusIcon /> Add Direct Entry
+                                     </button>
                                  </div>
                                  <div>
                                      <label htmlFor="manualSlope" className="block text-xs font-medium text-gray-300 mb-0.5">Manual Slope Override (per day)</label>
@@ -189,11 +236,14 @@ const App: React.FC = () => {
                         </div>
 
                          <div className="flex items-center gap-2">
-                            <button onClick={handleCompute} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded-lg transition-colors text-base shadow-md">
-                                Compute & Classify
+                            <button onClick={handleCompute} className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded-lg transition-colors text-base shadow-md">
+                                Compute
                             </button>
-                            <button onClick={loadExample} className="w-1/2 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-3 rounded-lg transition-colors shadow-md text-sm">
+                            <button onClick={loadExample} className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-3 rounded-lg transition-colors shadow-md text-sm">
                                 Load Example
+                            </button>
+                            <button onClick={handleClear} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg transition-colors shadow-md text-sm">
+                                Clear
                             </button>
                         </div>
 

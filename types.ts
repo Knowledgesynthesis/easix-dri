@@ -8,6 +8,7 @@ export interface LabRow {
 }
 
 export interface DirectEntry {
+  id: string;
   day: string;
   value: string;
   type: 'easix' | 'log2';

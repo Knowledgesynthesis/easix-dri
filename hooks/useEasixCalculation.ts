@@ -9,7 +9,7 @@ const isNumeric = (val: string | number | null | undefined): val is string | num
 
 export const useEasixCalculation = (
   labRows: LabRow[],
-  directEntry: DirectEntry,
+  directEntries: DirectEntry[],
   manualSlope: string
 ): CalculationResult => {
   return useMemo(() => {
@@ -22,42 +22,56 @@ export const useEasixCalculation = (
         const plt = parseFloat(row.platelets);
 
         if (![day, ldh, cr, plt].every(v => isNumeric(v) && v >= 0)) return null;
-        
+
         const easix = (ldh * cr) / Math.max(plt, EPS);
         if (easix <= 0) return null;
-        
+
         const log2Easix = Math.log(easix) / Math.log(2);
-        
+
         return { day, easix, log2Easix, source: 'lab' as const };
       })
       // FIX: The type predicate `p is Point` was invalid because TypeScript inferred a more specific type for `p` from the preceding `map` operation.
       // Explicitly annotating `p` with `Point | null` allows the type of `p` to be treated as a supertype, making the predicate valid for narrowing.
       .filter((p: Point | null): p is Point => p !== null && p.day >= DAY_RANGE.min && p.day <= DAY_RANGE.max && isFinite(p.log2Easix));
-    
-    // 2. Process direct entry
-    let directPoint: Point | null = null;
-    const directDay = parseFloat(directEntry.day);
-    const directValue = parseFloat(directEntry.value);
 
-    if (isNumeric(directDay) && directDay >= DAY_RANGE.min && directDay <= DAY_RANGE.max && isNumeric(directValue) && directValue > 0) {
-      if (directEntry.type === 'easix') {
-        const log2Easix = Math.log(directValue) / Math.log(2);
-        if (isFinite(log2Easix)) {
-            directPoint = { day: directDay, easix: directValue, log2Easix, source: 'direct' };
+    // 2. Process direct entries
+    const directPoints: Point[] = directEntries
+      .map(entry => {
+        const directDay = parseFloat(entry.day);
+        const directValue = parseFloat(entry.value);
+
+        // Validate day is in range
+        if (!(isNumeric(directDay) && directDay >= DAY_RANGE.min && directDay <= DAY_RANGE.max)) {
+          return null;
         }
-      } else { // log2
-         if (isFinite(directValue)) {
+
+        // Validate value and convert based on type
+        if (!isNumeric(directValue)) {
+          return null;
+        }
+
+        if (entry.type === 'easix') {
+          // EASIX must be positive
+          if (directValue <= 0) return null;
+          const log2Easix = Math.log(directValue) / Math.log(2);
+          if (isFinite(log2Easix)) {
+            return { day: directDay, easix: directValue, log2Easix, source: 'direct' as const };
+          }
+        } else { // log2
+          // log2EASIX can be any finite number (positive or negative)
+          if (isFinite(directValue)) {
             const easix = Math.pow(2, directValue);
-            directPoint = { day: directDay, easix, log2Easix: directValue, source: 'direct' };
-         }
-      }
-    }
+            if (easix > 0 && isFinite(easix)) {
+              return { day: directDay, easix, log2Easix: directValue, source: 'direct' as const };
+            }
+          }
+        }
+        return null;
+      })
+      .filter((p: Point | null): p is Point => p !== null);
 
     // 3. Combine and sort points
-    const allPoints = [...labPoints];
-    if (directPoint) {
-      allPoints.push(directPoint);
-    }
+    const allPoints = [...labPoints, ...directPoints];
     allPoints.sort((a, b) => a.day - b.day);
 
     const n = allPoints.length;
@@ -125,5 +139,5 @@ export const useEasixCalculation = (
         classificationNote,
     };
 
-  }, [labRows, directEntry, manualSlope]);
+  }, [labRows, directEntries, manualSlope]);
 };
