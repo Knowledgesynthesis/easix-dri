@@ -122,17 +122,17 @@ const App: React.FC = () => {
                                         <div>
                                             <label className="block text-xs text-gray-400 mb-0.5">LDH (IU/L)</label>
                                             <input type="number" value={row.ldh} onChange={e => updateRow(row.id, 'ldh', e.target.value)} placeholder="e.g. 250" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.ldh) || null} range={[140, 280]} label="Normal" />
+                                            <MiniGauge value={parseFloat(row.ldh) || null} range={[140, 280]} label="Normal" labType="ldh" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-400 mb-0.5">Creatinine</label>
                                             <input type="number" step="0.1" value={row.creatinine} onChange={e => updateRow(row.id, 'creatinine', e.target.value)} placeholder="e.g. 0.9" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.creatinine) || null} range={[0.6, 1.3]} label="Normal" />
+                                            <MiniGauge value={parseFloat(row.creatinine) || null} range={[0.6, 1.3]} label="Normal" labType="creatinine" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-400 mb-0.5">Platelets</label>
                                             <input type="number" value={row.platelets} onChange={e => updateRow(row.id, 'platelets', e.target.value)} placeholder="e.g. 150" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.platelets) || null} range={[150, 400]} label="Normal" />
+                                            <MiniGauge value={parseFloat(row.platelets) || null} range={[150, 400]} label="Normal" labType="platelets" />
                                         </div>
                                     </div>
                                 ))}

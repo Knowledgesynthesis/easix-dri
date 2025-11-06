@@ -5,9 +5,10 @@ interface MiniGaugeProps {
   value: number | null;
   range: [number, number];
   label: string;
+  labType?: 'ldh' | 'creatinine' | 'platelets';
 }
 
-export const MiniGauge: React.FC<MiniGaugeProps> = ({ value, range, label }) => {
+export const MiniGauge: React.FC<MiniGaugeProps> = ({ value, range, label, labType }) => {
   const [refLow, refHigh] = range;
 
   // Calculate scale that accommodates both the reference range and the value
@@ -34,6 +35,38 @@ export const MiniGauge: React.FC<MiniGaugeProps> = ({ value, range, label }) => 
   const refBandWidth = ((refHigh - refLow) / scaleSpan) * 100;
   const markerPosition = value !== null ? Math.max(0, Math.min(100, ((value - scaleMin) / scaleSpan) * 100)) : null;
 
+  // Determine marker color based on lab type and value
+  const getMarkerColor = (val: number | null): string => {
+    if (val === null) return '#22d3ee'; // cyan-400 default
+
+    // Within normal range - always green
+    if (val >= refLow && val <= refHigh) return '#22c55e'; // green-500
+
+    // Outside normal range - check thresholds based on lab type
+    if (labType === 'ldh') {
+      // LDH: Yellow 110-139 or 281-350, Red <110 or >350
+      if ((val >= 110 && val < refLow) || (val > refHigh && val <= 350)) {
+        return '#eab308'; // yellow-500
+      }
+      return '#ef4444'; // red-500
+    } else if (labType === 'creatinine') {
+      // Creatinine: Yellow 0.4-0.59 or 1.31-1.8, Red <0.4 or >1.8
+      if ((val >= 0.4 && val < refLow) || (val > refHigh && val <= 1.8)) {
+        return '#eab308'; // yellow-500
+      }
+      return '#ef4444'; // red-500
+    } else if (labType === 'platelets') {
+      // Platelets: Yellow 100-149 or 401-500, Red <100 or >500
+      if ((val >= 100 && val < refLow) || (val > refHigh && val <= 500)) {
+        return '#eab308'; // yellow-500
+      }
+      return '#ef4444'; // red-500
+    }
+
+    // Default fallback
+    return '#22d3ee'; // cyan-400
+  };
+
   // Format range values with appropriate precision
   const formatValue = (val: number): string => {
     // If value is less than 10, show 2 decimal places, otherwise show 1 or 0
@@ -55,8 +88,8 @@ export const MiniGauge: React.FC<MiniGaugeProps> = ({ value, range, label }) => 
         ></div>
         {markerPosition !== null && (
           <div
-            className="absolute h-full w-1 bg-cyan-400"
-            style={{ left: `${markerPosition}%` }}
+            className="absolute h-full w-1"
+            style={{ left: `${markerPosition}%`, backgroundColor: getMarkerColor(value) }}
           ></div>
         )}
       </div>
