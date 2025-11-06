@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Chart } from './components/Chart';
 import { MiniGauge } from './components/MiniGauge';
 import { useEasixCalculation } from './hooks/useEasixCalculation';
@@ -14,6 +14,12 @@ const TrashIcon = () => (
 );
 const ChevronDownIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+);
+const DownloadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+);
+const UploadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
 )
 
 const EXAMPLE_DATA: LabRow[] = [
@@ -22,6 +28,106 @@ const EXAMPLE_DATA: LabRow[] = [
     { id: '3', day: '85', ldh: '450', creatinine: '1.2', platelets: '80' },
 ];
 
+// CSV utility functions
+const downloadSampleCSV = () => {
+    const csv = `Day,LDH,Creatinine,Platelets
+30,250,0.9,150
+60,350,1.1,100
+85,450,1.2,80`;
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'easix_sample.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+// Fuzzy column matching
+const matchColumn = (headers: string[], possibleNames: string[]): number => {
+    const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+    const normalizedPossible = possibleNames.map(n => n.toLowerCase().trim());
+
+    for (const possible of normalizedPossible) {
+        const index = normalizedHeaders.findIndex(h => h.includes(possible) || possible.includes(h));
+        if (index !== -1) return index;
+    }
+    return -1;
+};
+
+interface CSVParseResult {
+    imported: LabRow[];
+    missingValues: number;
+    outOfRange: number;
+    error?: string;
+}
+
+const parseCSV = (csvText: string): CSVParseResult => {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) {
+        return { imported: [], missingValues: 0, outOfRange: 0, error: 'CSV file is empty or has no data rows' };
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    // Try to match columns with fuzzy matching
+    const dayIdx = matchColumn(headers, ['day', 'days', 'day post-transplant', 'd+', 'post-transplant day']);
+    const ldhIdx = matchColumn(headers, ['ldh', 'lactate dehydrogenase', 'lactate']);
+    const creatinineIdx = matchColumn(headers, ['creatinine', 'cr', 'creat']);
+    const plateletsIdx = matchColumn(headers, ['platelet', 'platelets', 'plt', 'platelet count']);
+
+    if (dayIdx === -1 || ldhIdx === -1 || creatinineIdx === -1 || plateletsIdx === -1) {
+        return {
+            imported: [],
+            missingValues: 0,
+            outOfRange: 0,
+            error: `Could not find required columns. Found: ${headers.join(', ')}. Please use Day, LDH, Creatinine, Platelets`
+        };
+    }
+
+    const imported: LabRow[] = [];
+    let missingValues = 0;
+    let outOfRange = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const values = line.split(',').map(v => v.trim());
+
+        const day = values[dayIdx];
+        const ldh = values[ldhIdx];
+        const creatinine = values[creatinineIdx];
+        const platelets = values[plateletsIdx];
+
+        // Check if day is in range (20-120)
+        const dayNum = parseFloat(day);
+        if (!isNaN(dayNum) && (dayNum < 20 || dayNum > 120)) {
+            outOfRange++;
+            continue; // Skip this row
+        }
+
+        // Check for missing values (import anyway, but count them)
+        const hasMissing = !day || !ldh || !creatinine || !platelets;
+        if (hasMissing) {
+            missingValues++;
+        }
+
+        imported.push({
+            id: crypto.randomUUID(),
+            day: day || '',
+            ldh: ldh || '',
+            creatinine: creatinine || '',
+            platelets: platelets || ''
+        });
+    }
+
+    return { imported, missingValues, outOfRange };
+};
+
 const App: React.FC = () => {
     const [labRows, setLabRows] = useState<LabRow[]>([]);
     const [dri, setDri] = useState<DRI | ''>('');
@@ -29,6 +135,8 @@ const App: React.FC = () => {
     const [conditioning, setConditioning] = useState<Conditioning | ''>('');
     const [results, setResults] = useState<CalculationResult | null>(null);
     const [showPointsTable, setShowPointsTable] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const calculation = useEasixCalculation(labRows);
 
@@ -49,12 +157,61 @@ const App: React.FC = () => {
     const handleClear = () => {
         setLabRows([]);
         setResults(null);
+        setUploadMessage(null);
     };
 
     const loadExample = () => {
         setLabRows(EXAMPLE_DATA.map(r => ({...r, id: crypto.randomUUID()})));
         setResults(null);
-    }
+        setUploadMessage(null);
+    };
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+            const result = parseCSV(text);
+
+            if (result.error) {
+                setUploadMessage({ type: 'error', text: result.error });
+                return;
+            }
+
+            setLabRows(result.imported);
+            setResults(null);
+
+            // Build success message
+            const messages: string[] = [];
+            messages.push(`✓ Successfully imported ${result.imported.length} lab ${result.imported.length === 1 ? 'entry' : 'entries'}`);
+
+            if (result.missingValues > 0) {
+                messages.push(`⚠ ${result.missingValues} ${result.missingValues === 1 ? 'entry has' : 'entries have'} missing values (can be filled manually)`);
+            }
+
+            if (result.outOfRange > 0) {
+                messages.push(`ℹ ${result.outOfRange} ${result.outOfRange === 1 ? 'entry' : 'entries'} outside day 20-120 ${result.outOfRange === 1 ? 'was' : 'were'} excluded`);
+            }
+
+            setUploadMessage({
+                type: result.missingValues > 0 ? 'warning' : 'success',
+                text: messages.join('. ')
+            });
+        };
+
+        reader.readAsText(file);
+
+        // Reset file input so same file can be uploaded again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const triggerFileUpload = () => {
+        fileInputRef.current?.click();
+    };
     
     const NRM_DATA = {
         [Prophylaxis.PTCy]: { High: '21.7%', Low: '2.2%' },
@@ -137,9 +294,38 @@ const App: React.FC = () => {
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={addRow} className="mt-2 flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
-                                <PlusIcon /> Add Lab Row
-                            </button>
+
+                            {/* Upload message */}
+                            {uploadMessage && (
+                                <div className={`mt-2 p-2 rounded-md text-sm ${
+                                    uploadMessage.type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
+                                    uploadMessage.type === 'warning' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50' :
+                                    'bg-red-500/20 text-red-400 border border-red-500/50'
+                                }`}>
+                                    {uploadMessage.text}
+                                </div>
+                            )}
+
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <button onClick={addRow} className="flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
+                                    <PlusIcon /> Add Lab Row
+                                </button>
+                                <button onClick={downloadSampleCSV} className="flex items-center gap-1 text-sm font-medium text-green-400 hover:text-green-300 transition-colors">
+                                    <DownloadIcon /> Download Sample CSV
+                                </button>
+                                <button onClick={triggerFileUpload} className="flex items-center gap-1 text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors">
+                                    <UploadIcon /> Upload CSV
+                                </button>
+                            </div>
+
+                            {/* Hidden file input */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                accept=".csv"
+                                className="hidden"
+                            />
                         </div>
 
                         {/* Clinical Factors */}
