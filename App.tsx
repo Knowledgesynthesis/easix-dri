@@ -268,12 +268,12 @@ const App: React.FC = () => {
                             <div className="space-y-2">
                                 {labRows.map((row) => (
                                     <div key={row.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-gray-900/50 p-2 rounded-md">
-                                        <div>
-                                            <label className="block text-xs text-gray-400 mb-0.5">Day</label>
-                                            <div className="flex gap-1 items-center">
-                                                <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0">
-                                                    <TrashIcon />
-                                                </button>
+                                        <div className="flex gap-1 items-end">
+                                            <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 pb-1.5">
+                                                <TrashIcon />
+                                            </button>
+                                            <div className="flex-1">
+                                                <label className="block text-xs text-gray-400 mb-0.5">Day</label>
                                                 <input type="number" value={row.day} onChange={e => updateRow(row.id, 'day', e.target.value)} placeholder="e.g. 30" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
                                             </div>
                                         </div>
