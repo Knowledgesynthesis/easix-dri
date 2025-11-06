@@ -144,7 +144,7 @@ const App: React.FC = () => {
 
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                             <h2 className="text-lg font-semibold mb-2 text-white">2. Clinical Factors (Optional)</h2>
+                             <h2 className="text-lg font-semibold mb-2 text-white">2. Clinical Factors</h2>
                              <div className="space-y-2">
                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                      <div>

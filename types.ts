@@ -9,10 +9,8 @@ export interface LabRow {
 
 // FIX: Corrected a typo in the enum name 'D RI' to 'DRI'.
 export enum DRI {
-  Low = 'Low',
-  Intermediate = 'Intermediate',
-  High = 'High',
-  VeryHigh = 'Very High',
+  LowIntermediate = 'Low-Intermediate',
+  HighVeryHigh = 'High-Very High',
 }
 
 export enum Prophylaxis {
