@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { LabRow, DirectEntry, Point, CalculationResult, Classification } from '../types';
+import type { LabRow, Point, CalculationResult, Classification } from '../types';
 
 const EPS = 1e-9;
 const DAY_RANGE = { min: 20, max: 120 };
@@ -8,9 +8,7 @@ const isNumeric = (val: string | number | null | undefined): val is string | num
   val !== null && val !== undefined && val !== '' && !isNaN(Number(val));
 
 export const useEasixCalculation = (
-  labRows: LabRow[],
-  directEntries: DirectEntry[],
-  manualSlope: string
+  labRows: LabRow[]
 ): CalculationResult => {
   return useMemo(() => {
     // 1. Process lab rows into points
@@ -28,71 +26,26 @@ export const useEasixCalculation = (
 
         const log2Easix = Math.log(easix) / Math.log(2);
 
-        return { day, easix, log2Easix, source: 'lab' as const };
+        return { day, easix, log2Easix };
       })
       // FIX: The type predicate `p is Point` was invalid because TypeScript inferred a more specific type for `p` from the preceding `map` operation.
       // Explicitly annotating `p` with `Point | null` allows the type of `p` to be treated as a supertype, making the predicate valid for narrowing.
       .filter((p: Point | null): p is Point => p !== null && p.day >= DAY_RANGE.min && p.day <= DAY_RANGE.max && isFinite(p.log2Easix));
 
-    // 2. Process direct entries
-    const directPoints: Point[] = directEntries
-      .map(entry => {
-        const directDay = parseFloat(entry.day);
-        const directValue = parseFloat(entry.value);
+    // 2. Sort points
+    labPoints.sort((a, b) => a.day - b.day);
 
-        // Validate day is in range
-        if (!(isNumeric(directDay) && directDay >= DAY_RANGE.min && directDay <= DAY_RANGE.max)) {
-          return null;
-        }
-
-        // Validate value and convert based on type
-        if (!isNumeric(directValue)) {
-          return null;
-        }
-
-        if (entry.type === 'easix') {
-          // EASIX must be positive
-          if (directValue <= 0) return null;
-          const log2Easix = Math.log(directValue) / Math.log(2);
-          if (isFinite(log2Easix)) {
-            return { day: directDay, easix: directValue, log2Easix, source: 'direct' as const };
-          }
-        } else { // log2
-          // log2EASIX can be any finite number (positive or negative)
-          if (isFinite(directValue)) {
-            const easix = Math.pow(2, directValue);
-            if (easix > 0 && isFinite(easix)) {
-              return { day: directDay, easix, log2Easix: directValue, source: 'direct' as const };
-            }
-          }
-        }
-        return null;
-      })
-      .filter((p: Point | null): p is Point => p !== null);
-
-    // 3. Combine and sort points
-    const allPoints = [...labPoints, ...directPoints];
-    allPoints.sort((a, b) => a.day - b.day);
-
-    const n = allPoints.length;
+    const n = labPoints.length;
     let slope: number | null = null;
     let intercept: number | null = null;
     let predictedDay90: number | null = null;
     let predictedDay120: number | null = null;
     let classification: Classification = 'Insufficient Data';
-    let classificationNote: string | null = "Need at least 2 valid points between day +20 and +120, or a manual slope.";
+    let classificationNote: string | null = "Need at least 2 valid points between day +20 and +120.";
 
-    const manualSlopeValue = isNumeric(manualSlope) ? parseFloat(manualSlope) : null;
-    
-    if (n > 0 && manualSlopeValue !== null) {
-        // Calculate with manual slope
-        const xBar = allPoints.reduce((sum, p) => sum + p.day, 0) / n;
-        const yBar = allPoints.reduce((sum, p) => sum + p.log2Easix, 0) / n;
-        slope = manualSlopeValue;
-        intercept = yBar - slope * xBar;
-    } else if (n >= 2) {
+    if (n >= 2) {
         // Calculate with OLS
-        const { Sx, Sy, Sxx, Sxy } = allPoints.reduce(
+        const { Sx, Sy, Sxx, Sxy } = labPoints.reduce(
             (acc, p) => {
                 acc.Sx += p.day;
                 acc.Sy += p.log2Easix;
@@ -119,7 +72,7 @@ export const useEasixCalculation = (
         classificationNote = `Based on predicted log₂(EASIX) at day +90 of ${predictedDay90.toFixed(3)}.`;
     } else if (n === 1) {
         // Handle single point case
-        const point = allPoints[0];
+        const point = labPoints[0];
         if (Math.abs(point.day - 90) <= 10) {
             predictedDay90 = point.log2Easix;
             classification = predictedDay90 >= 2.32 ? 'High' : 'Low';
@@ -128,9 +81,9 @@ export const useEasixCalculation = (
             classificationNote = "A single data point exists, but it is not within ±10 days of day +90."
         }
     }
-    
+
     return {
-        points: allPoints,
+        points: labPoints,
         slope,
         intercept,
         predictedDay90,
@@ -139,5 +92,5 @@ export const useEasixCalculation = (
         classificationNote,
     };
 
-  }, [labRows, directEntries, manualSlope]);
+  }, [labRows]);
 };

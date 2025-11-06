@@ -94,7 +94,7 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
           cx={xScale(p.day)}
           cy={yScale(p.log2Easix)}
           r="4"
-          fill={p.source === 'direct' ? '#22d3ee' : '#9ca3af'} // cyan-400 or gray-400
+          fill="#22d3ee" // cyan-400
           stroke="#111827"
           strokeWidth="1"
         />
