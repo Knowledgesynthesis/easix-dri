@@ -25,3 +25,11 @@ dist-ssr
 
 # Claude Code documentation
 CLAUDE.md
+
+# Model implementation planning
+MODEL_IMPLEMENTATION_PLAN.md
+MESSAGE_TO_COAUTHORS.txt
+Webpage script.R
+model_coefficients.json
+*.rds
+validation_test_cases.json
