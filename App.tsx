@@ -253,7 +253,8 @@ const App: React.FC = () => {
             Low: 'bg-green-500/20 text-green-400 border-green-500',
             'Insufficient Data': 'bg-amber-500/20 text-amber-400 border-amber-500',
         };
-        return <span className={`px-3 py-1 text-sm font-bold rounded-full border ${styles[classification]}`}>{classification} Risk</span>;
+        const displayText = classification === 'Insufficient Data' ? classification : `${classification} Risk`;
+        return <span className={`px-3 py-1 text-sm font-bold rounded-full border ${styles[classification]}`}>{displayText}</span>;
     };
 
     return (
