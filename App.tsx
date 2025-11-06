@@ -62,13 +62,14 @@ interface CSVParseResult {
     imported: LabRow[];
     missingValues: number;
     outOfRange: number;
+    complete: number;
     error?: string;
 }
 
 const parseCSV = (csvText: string): CSVParseResult => {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) {
-        return { imported: [], missingValues: 0, outOfRange: 0, error: 'CSV file is empty or has no data rows' };
+        return { imported: [], missingValues: 0, outOfRange: 0, complete: 0, error: 'CSV file is empty or has no data rows' };
     }
 
     const headers = lines[0].split(',').map(h => h.trim());
@@ -84,6 +85,7 @@ const parseCSV = (csvText: string): CSVParseResult => {
             imported: [],
             missingValues: 0,
             outOfRange: 0,
+            complete: 0,
             error: `Could not find required columns. Found: ${headers.join(', ')}. Please use Day, LDH, Creatinine, Platelets`
         };
     }
@@ -91,6 +93,7 @@ const parseCSV = (csvText: string): CSVParseResult => {
     const imported: LabRow[] = [];
     let missingValues = 0;
     let outOfRange = 0;
+    let complete = 0;
 
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -114,6 +117,8 @@ const parseCSV = (csvText: string): CSVParseResult => {
         const hasMissing = !day || !ldh || !creatinine || !platelets;
         if (hasMissing) {
             missingValues++;
+        } else {
+            complete++;
         }
 
         imported.push({
@@ -125,7 +130,7 @@ const parseCSV = (csvText: string): CSVParseResult => {
         });
     }
 
-    return { imported, missingValues, outOfRange };
+    return { imported, missingValues, outOfRange, complete };
 };
 
 const App: React.FC = () => {
@@ -185,7 +190,7 @@ const App: React.FC = () => {
 
             // Build success message
             const messages: string[] = [];
-            messages.push(`✓ Successfully imported ${result.imported.length} lab ${result.imported.length === 1 ? 'entry' : 'entries'}`);
+            messages.push(`✓ Successfully imported ${result.imported.length} lab ${result.imported.length === 1 ? 'entry' : 'entries'} (${result.complete} ${result.complete === 1 ? 'contributes' : 'contribute'} to computation)`);
 
             if (result.missingValues > 0) {
                 messages.push(`⚠ ${result.missingValues} ${result.missingValues === 1 ? 'entry has' : 'entries have'} missing values (can be filled manually)`);
