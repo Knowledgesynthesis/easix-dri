@@ -39,4 +39,8 @@ export interface CalculationResult {
   predictedDay120: number | null;
   classification: Classification;
   classificationNote: string | null;
+  // Dynamic LME model predictions
+  eventRate2yr: number | null;  // 2-year event rate percentage (0-100)
+  slopeAtLandmark: number | null;  // Rate of change in log2EASIX
+  log2easixAtLandmark: number | null;  // Predicted log2EASIX at day 120
 }

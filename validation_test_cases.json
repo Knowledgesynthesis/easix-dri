@@ -1,0 +1,408 @@
+{
+  "metadata": {
+    "created_date": "2025-11-06",
+    "model_version": "1.0.0-lme-slope-covariate",
+    "landmark_time_days": 120,
+    "prediction_horizon_days": 730,
+    "n_cases": 4,
+    "description": "Validation test cases with gold-standard R predictions"
+  },
+  "model_parameters": {
+    "time_standardization": {
+      "mean": 66.7838571983,
+      "sd": 25.3348666095
+    },
+    "lme_fixed_effects": {
+      "intercept": 1.4477739852,
+      "time_slope": -0.12064345642,
+      "dri": -0.18140382856
+    },
+    "cox_coefficients": {
+      "dri": 0.7128726143,
+      "log2easix_at_landmark": 0.47192797676,
+      "slope_at_landmark": 17.2046103403
+    }
+  },
+  "validation_cases": [
+    {
+      "patient_id": "13-187-635",
+      "dri": 0,
+      "observations": [
+        {
+          "day": 24,
+          "log2easix": 2.8200843874
+        },
+        {
+          "day": 28,
+          "log2easix": 2.8894064045
+        },
+        {
+          "day": 31,
+          "log2easix": 2.1444873854
+        },
+        {
+          "day": 35,
+          "log2easix": 1.2936227257
+        },
+        {
+          "day": 38,
+          "log2easix": 0.98370491664
+        },
+        {
+          "day": 42,
+          "log2easix": 0.66189467448
+        },
+        {
+          "day": 45,
+          "log2easix": 0.49536506423
+        },
+        {
+          "day": 49,
+          "log2easix": 0.63395459213
+        },
+        {
+          "day": 52,
+          "log2easix": 0.81097771712
+        },
+        {
+          "day": 56,
+          "log2easix": 0.41118650578
+        },
+        {
+          "day": 65,
+          "log2easix": 0.79673410937
+        },
+        {
+          "day": 70,
+          "log2easix": 0.49598539952
+        },
+        {
+          "day": 77,
+          "log2easix": 0.88130206936
+        },
+        {
+          "day": 84,
+          "log2easix": 0.96437609027
+        },
+        {
+          "day": 91,
+          "log2easix": 0.98600987451
+        },
+        {
+          "day": 99,
+          "log2easix": 0.31817596003
+        },
+        {
+          "day": 113,
+          "log2easix": -0.32250528835
+        }
+      ],
+      "expected_predictions": {
+        "log2easix_at_landmark": -0.23827242732,
+        "slope_at_landmark": -0.020665024089,
+        "linear_predictor": -0.46798111168,
+        "survival_2yr": 0.91135664144,
+        "event_rate_2yr_percent": 8.8643358562
+      },
+      "metadata": {
+        "n_observations": 17,
+        "days_range": [24, 113],
+        "mean_log2easix": 1.0155742699
+      }
+    },
+    {
+      "patient_id": "2-799-749",
+      "dri": 0,
+      "observations": [
+        {
+          "day": 21,
+          "log2easix": 3.3157318289
+        },
+        {
+          "day": 23,
+          "log2easix": 4.193688756
+        },
+        {
+          "day": 24,
+          "log2easix": 4.0058490757
+        },
+        {
+          "day": 25,
+          "log2easix": 3.0655202884
+        },
+        {
+          "day": 29,
+          "log2easix": 2.4888459968
+        },
+        {
+          "day": 31,
+          "log2easix": 2.0228609578
+        },
+        {
+          "day": 55,
+          "log2easix": 1.1833228567
+        },
+        {
+          "day": 59,
+          "log2easix": 0.9139182995
+        },
+        {
+          "day": 62,
+          "log2easix": 1.1543883138
+        },
+        {
+          "day": 66,
+          "log2easix": 1.2859027781
+        },
+        {
+          "day": 69,
+          "log2easix": 1.0537105867
+        },
+        {
+          "day": 73,
+          "log2easix": 1.5544566182
+        },
+        {
+          "day": 75,
+          "log2easix": 1.4038130616
+        },
+        {
+          "day": 80,
+          "log2easix": 1.1581552245
+        },
+        {
+          "day": 83,
+          "log2easix": 1.2905774783
+        },
+        {
+          "day": 87,
+          "log2easix": 1.3591462984
+        },
+        {
+          "day": 90,
+          "log2easix": 1.5503487456
+        },
+        {
+          "day": 94,
+          "log2easix": 1.7739963251
+        },
+        {
+          "day": 102,
+          "log2easix": 2.1716212921
+        },
+        {
+          "day": 105,
+          "log2easix": 2.3638719249
+        },
+        {
+          "day": 109,
+          "log2easix": 2.6476982561
+        },
+        {
+          "day": 112,
+          "log2easix": 2.7077456397
+        },
+        {
+          "day": 116,
+          "log2easix": 2.8567671162
+        },
+        {
+          "day": 119,
+          "log2easix": 4.4624341068
+        }
+      ],
+      "expected_predictions": {
+        "log2easix_at_landmark": 1.927373276,
+        "slope_at_landmark": -0.0047004224806,
+        "linear_predictor": 0.82871243342,
+        "survival_2yr": 0.71215235009,
+        "event_rate_2yr_percent": 28.7847649914
+      },
+      "metadata": {
+        "n_observations": 24,
+        "days_range": [21, 119],
+        "mean_log2easix": 2.1660154927
+      }
+    },
+    {
+      "patient_id": "13-715-224",
+      "dri": 0,
+      "observations": [
+        {
+          "day": 41,
+          "log2easix": 1.4358710027
+        },
+        {
+          "day": 45,
+          "log2easix": 0.35845397091
+        },
+        {
+          "day": 48,
+          "log2easix": 0.32682923006
+        },
+        {
+          "day": 52,
+          "log2easix": 0.48639866624
+        },
+        {
+          "day": 55,
+          "log2easix": 0.94171957133
+        },
+        {
+          "day": 61,
+          "log2easix": 0.56735777694
+        },
+        {
+          "day": 66,
+          "log2easix": 0.18428029442
+        },
+        {
+          "day": 69,
+          "log2easix": 0.3752238802
+        },
+        {
+          "day": 74,
+          "log2easix": 0.89106562845
+        },
+        {
+          "day": 76,
+          "log2easix": 1.1927202164
+        },
+        {
+          "day": 81,
+          "log2easix": 2.2898344652
+        },
+        {
+          "day": 83,
+          "log2easix": 1.8502215717
+        },
+        {
+          "day": 88,
+          "log2easix": 1.4856664576
+        },
+        {
+          "day": 95,
+          "log2easix": 1.5364589501
+        },
+        {
+          "day": 115,
+          "log2easix": 0.5077369889
+        }
+      ],
+      "expected_predictions": {
+        "log2easix_at_landmark": 1.3917316103,
+        "slope_at_landmark": 0.0083979998473,
+        "linear_predictor": 0.80128139807,
+        "survival_2yr": 0.71872380019,
+        "event_rate_2yr_percent": 28.1276199808
+      },
+      "metadata": {
+        "n_observations": 15,
+        "days_range": [41, 115],
+        "mean_log2easix": 0.96198924473
+      }
+    },
+    {
+      "patient_id": "10-683-747",
+      "dri": 1,
+      "observations": [
+        {
+          "day": 25,
+          "log2easix": 0.19599917306
+        },
+        {
+          "day": 36,
+          "log2easix": -0.12039843328
+        },
+        {
+          "day": 39,
+          "log2easix": -0.14624803963
+        },
+        {
+          "day": 42,
+          "log2easix": 0.067899775866
+        },
+        {
+          "day": 46,
+          "log2easix": 0.067988291639
+        },
+        {
+          "day": 49,
+          "log2easix": 0.023083613113
+        },
+        {
+          "day": 53,
+          "log2easix": 0.21695105835
+        },
+        {
+          "day": 56,
+          "log2easix": 0.1747744011
+        },
+        {
+          "day": 60,
+          "log2easix": 0.39292474547
+        },
+        {
+          "day": 63,
+          "log2easix": 0.027744374341
+        },
+        {
+          "day": 67,
+          "log2easix": -0.077472485214
+        },
+        {
+          "day": 70,
+          "log2easix": -0.36118077658
+        },
+        {
+          "day": 74,
+          "log2easix": -0.32025927453
+        },
+        {
+          "day": 77,
+          "log2easix": -0.56659227232
+        },
+        {
+          "day": 81,
+          "log2easix": -0.63329566549
+        },
+        {
+          "day": 84,
+          "log2easix": -0.90218430712
+        },
+        {
+          "day": 91,
+          "log2easix": -0.84256783525
+        },
+        {
+          "day": 99,
+          "log2easix": -0.83613222593
+        },
+        {
+          "day": 104,
+          "log2easix": -0.88596619945
+        },
+        {
+          "day": 111,
+          "log2easix": -0.83929595829
+        },
+        {
+          "day": 118,
+          "log2easix": -1.2551418215
+        }
+      ],
+      "expected_predictions": {
+        "log2easix_at_landmark": -1.0703627713,
+        "slope_at_landmark": -0.015197255143,
+        "linear_predictor": -0.053724375723,
+        "survival_2yr": 0.86895761436,
+        "event_rate_2yr_percent": 13.1042385636
+      },
+      "metadata": {
+        "n_observations": 21,
+        "days_range": [25, 118],
+        "mean_log2easix": -0.31520808865
+      }
+    }
+  ]
+}

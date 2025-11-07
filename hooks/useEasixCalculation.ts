@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
 import type { LabRow, Point, CalculationResult, Classification } from '../types';
+import { DRI } from '../types';
+import { predictDynamicEASIX } from '../dynamicModel';
+import type { PatientObservation } from '../dynamicModel';
 
 const EPS = 1e-9;
 const DAY_RANGE = { min: 20, max: 120 };
@@ -7,8 +10,15 @@ const DAY_RANGE = { min: 20, max: 120 };
 const isNumeric = (val: string | number | null | undefined): val is string | number =>
   val !== null && val !== undefined && val !== '' && !isNaN(Number(val));
 
+const encodeDri = (value: DRI | '' | undefined): number | null => {
+  if (value === DRI.HighVeryHigh) return 1;
+  if (value === DRI.LowIntermediate) return 0;
+  return null;
+};
+
 export const useEasixCalculation = (
-  labRows: LabRow[]
+  labRows: LabRow[],
+  driSelection: DRI | ''
 ): CalculationResult => {
   return useMemo(() => {
     // 1. Process lab rows into points
@@ -42,6 +52,10 @@ export const useEasixCalculation = (
     let predictedDay120: number | null = null;
     let classification: Classification = 'Insufficient Data';
     let classificationNote: string | null = "Need at least 2 valid points between day +20 and +120.";
+    let eventRate2yr: number | null = null;
+    let slopeAtLandmark: number | null = null;
+    let log2easixAtLandmark: number | null = null;
+    const driIndicator = encodeDri(driSelection);
 
     if (n >= 2) {
         // Calculate with OLS
@@ -69,7 +83,7 @@ export const useEasixCalculation = (
         predictedDay90 = intercept + slope * 90;
         predictedDay120 = intercept + slope * 120;
         classification = predictedDay90 >= 2.32 ? 'High' : 'Low';
-        classificationNote = `Based on predicted log₂(EASIX) at day +90 of ${predictedDay90.toFixed(3)}.`;
+        classificationNote = `Legacy comparison: predicted log₂(EASIX) at day +90 is ${predictedDay90.toFixed(3)} (cut-point 2.32).`;
     } else if (n === 1) {
         // Handle single point case
         const point = labPoints[0];
@@ -82,6 +96,25 @@ export const useEasixCalculation = (
         }
     }
 
+    if (n >= 2 && driIndicator !== null) {
+      try {
+        const observations: PatientObservation[] = labPoints.map((point) => ({
+          day: point.day,
+          log2easix: point.log2Easix,
+        }));
+
+        const dynamicResult = predictDynamicEASIX(observations, driIndicator);
+        eventRate2yr = dynamicResult.event_rate_2yr_percent;
+        slopeAtLandmark = dynamicResult.slope_at_landmark;
+        log2easixAtLandmark = dynamicResult.log2easix_at_landmark;
+        classificationNote = `Inputs eligible for landmark prediction (DRI ${driSelection}; ${n} labs between days 20-120).`;
+      } catch (error) {
+        console.error('Dynamic EASIX prediction failed:', error);
+      }
+    } else if (n >= 2 && driIndicator === null) {
+      classificationNote = 'Select a Disease Risk Index category to unlock the 2-year event rate output.';
+    }
+
     return {
         points: labPoints,
         slope,
@@ -90,7 +123,10 @@ export const useEasixCalculation = (
         predictedDay120,
         classification,
         classificationNote,
+        eventRate2yr,
+        slopeAtLandmark,
+        log2easixAtLandmark,
     };
 
-  }, [labRows]);
+  }, [labRows, driSelection]);
 };

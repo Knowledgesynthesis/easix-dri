@@ -26,10 +26,23 @@ dist-ssr
 # Claude Code documentation
 CLAUDE.md
 
-# Model implementation planning
+# Model implementation planning (already in repo, but keep for reference)
 MODEL_IMPLEMENTATION_PLAN.md
-MESSAGE_TO_COAUTHORS.txt
-Webpage script.R
-model_coefficients.json
+
+# R model fitting files (keep locally, don't push to GitHub)
+*.R
 *.rds
-validation_test_cases.json
+*.xlsx
+dtrain.xlsx
+MODEL_FITTING_SUMMARY.md
+incremental_output.log
+robust_output.log
+
+# R history and temporary files
+.Rhistory
+*.RData
+*.Rproj
+
+# Note: model_coefficients.json and validation_test_cases.json WILL be tracked
+# These are needed for the app to function
+AGENTS.md

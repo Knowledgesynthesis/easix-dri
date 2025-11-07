@@ -3,8 +3,8 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Chart } from './components/Chart';
 import { MiniGauge } from './components/MiniGauge';
 import { useEasixCalculation } from './hooks/useEasixCalculation';
-import type { LabRow, CalculationResult, Classification } from './types';
-import { DRI, Prophylaxis, Conditioning } from './types';
+import type { LabRow, CalculationResult } from './types';
+import { DRI } from './types';
 
 const PlusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
@@ -136,14 +136,12 @@ const parseCSV = (csvText: string): CSVParseResult => {
 const App: React.FC = () => {
     const [labRows, setLabRows] = useState<LabRow[]>([]);
     const [dri, setDri] = useState<DRI | ''>('');
-    const [prophylaxis, setProphylaxis] = useState<Prophylaxis | ''>('');
-    const [conditioning, setConditioning] = useState<Conditioning | ''>('');
     const [results, setResults] = useState<CalculationResult | null>(null);
     const [showPointsTable, setShowPointsTable] = useState(false);
     const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const calculation = useEasixCalculation(labRows);
+    const calculation = useEasixCalculation(labRows, dri);
 
     const addRow = () => {
         setLabRows(prev => [...prev, { id: crypto.randomUUID(), day: '', ldh: '', creatinine: '', platelets: '' }]);
@@ -218,43 +216,27 @@ const App: React.FC = () => {
         fileInputRef.current?.click();
     };
     
-    const NRM_DATA = {
-        [Prophylaxis.PTCy]: { High: '21.7%', Low: '2.2%' },
-        [Prophylaxis.MTX]: { High: '23.5%', Low: '9.1%' },
-        [Conditioning.MAC]: { High: '17.4%', Low: '3.9%' },
-        [Conditioning.RIC_NMA]: { High: '25.3%', Low: '9.2%' },
+    const getEventRateTone = (rate: number) => {
+        if (rate >= 40) return 'border-red-400 bg-red-500/10 text-red-100';
+        if (rate >= 20) return 'border-amber-400 bg-amber-500/10 text-amber-100';
+        return 'border-green-400 bg-green-500/10 text-green-100';
     };
 
-    const renderNrmResult = () => {
-        if (!results || results.classification === 'Insufficient Data') return <p className="text-sm text-gray-400">Select clinical factors to see group-level outcomes once risk is classified.</p>;
-        
-        const riskLevel = results.classification;
-        const selectedFactors = [prophylaxis, conditioning].filter(Boolean);
-
-        if (selectedFactors.length === 0) {
-            return <p className="text-sm text-amber-400">Tip: Select GVHD Prophylaxis and/or Conditioning to see relevant group-level 1-year NRM.</p>;
+    const EventRateBadge: React.FC<{ eventRate: number | null }> = ({ eventRate }) => {
+        if (eventRate === null) {
+            return (
+                <div className="px-4 py-2 rounded-lg border border-amber-400 bg-amber-500/10 text-amber-200 text-sm font-semibold text-center">
+                    Awaiting ≥2 labs + DRI
+                </div>
+            );
         }
 
         return (
-            <ul className="space-y-2">
-                {prophylaxis && (
-                    <li><span className="font-semibold">{prophylaxis}:</span> {NRM_DATA[prophylaxis][riskLevel]}</li>
-                )}
-                {conditioning && (
-                    <li><span className="font-semibold">{conditioning}:</span> {NRM_DATA[conditioning][riskLevel]}</li>
-                )}
-            </ul>
+            <div className={`px-4 py-3 rounded-lg border text-center shadow-inner ${getEventRateTone(eventRate)}`}>
+                <p className="text-xs uppercase tracking-wide opacity-80">2-year event rate</p>
+                <p className="text-3xl font-bold font-mono">{eventRate.toFixed(1)}%</p>
+            </div>
         );
-    };
-
-    const ClassificationBadge: React.FC<{ classification: Classification }> = ({ classification }) => {
-        const styles = {
-            High: 'bg-red-500/20 text-red-400 border-red-500',
-            Low: 'bg-green-500/20 text-green-400 border-green-500',
-            'Insufficient Data': 'bg-amber-500/20 text-amber-400 border-amber-500',
-        };
-        const displayText = classification === 'Insufficient Data' ? classification : `${classification} Risk`;
-        return <span className={`px-3 py-1 text-sm font-bold rounded-full border ${styles[classification]}`}>{displayText}</span>;
     };
 
     return (
@@ -337,34 +319,12 @@ const App: React.FC = () => {
 
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                             <h2 className="text-lg font-semibold mb-2 text-white">2. Clinical Factors</h2>
-                             <div className="space-y-2">
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                     <div>
-                                         <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">Disease Risk Index (DRI)</label>
-                                         <select id="dri" value={dri} onChange={e => setDri(e.target.value as DRI)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
-                                            <option value="">Select...</option>
-                                            {Object.values(DRI).map(d => <option key={d} value={d}>{d}</option>)}
-                                         </select>
-                                     </div>
-                                     <div>
-                                         <label htmlFor="prophylaxis" className="block text-xs font-medium text-gray-300 mb-0.5">GVHD Prophylaxis</label>
-                                         <select id="prophylaxis" value={prophylaxis} onChange={e => setProphylaxis(e.target.value as Prophylaxis)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
-                                            <option value="">Select...</option>
-                                            <option value={Prophylaxis.PTCy}>PTCy-based</option>
-                                            <option value={Prophylaxis.MTX}>CNI/MTX-based</option>
-                                         </select>
-                                     </div>
-                                     <div>
-                                         <label htmlFor="conditioning" className="block text-xs font-medium text-gray-300 mb-0.5">Conditioning</label>
-                                         <select id="conditioning" value={conditioning} onChange={e => setConditioning(e.target.value as Conditioning)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
-                                            <option value="">Select...</option>
-                                            <option value={Conditioning.MAC}>MAC</option>
-                                            <option value={Conditioning.RIC_NMA}>RIC/NMA</option>
-                                         </select>
-                                     </div>
-                                 </div>
-                             </div>
+                            <h2 className="text-lg font-semibold mb-2 text-white">2. Disease Risk Index</h2>
+                            <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">High/Very High vs. Low/Intermediate (required for event-rate prediction)</label>
+                            <select id="dri" value={dri} onChange={e => setDri(e.target.value as DRI)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="">Select...</option>
+                                {Object.values(DRI).map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
                         </div>
 
                          <div className="flex items-center gap-2">
@@ -384,38 +344,25 @@ const App: React.FC = () => {
                     {/* Right Column: Outputs */}
                     <div className="lg:col-span-3 space-y-3">
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">Results & Classification</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">Dynamic Prediction</h2>
                              {results ? (
                                 <div className="space-y-3">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-gray-900/50 p-2 rounded-lg">
                                         <div>
-                                            <h3 className="text-base font-bold">Day +90 Risk Status</h3>
-                                            <p className="text-xs text-gray-400 max-w-md">{results.classificationNote}</p>
+                                            <h3 className="text-base font-bold">Landmark Model Output</h3>
+                                            {results.classificationNote && results.eventRate2yr === null && (
+                                                <p className="text-xs text-gray-300 max-w-md">{results.classificationNote}</p>
+                                            )}
                                         </div>
-                                        <ClassificationBadge classification={results.classification} />
+                                        <EventRateBadge eventRate={results.eventRate2yr ?? null} />
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
-                                        <div className="bg-gray-700 p-2 rounded-md">
-                                            <p className="text-xs text-gray-400">Slope (per day)</p>
-                                            <p className="text-xl font-mono font-bold text-cyan-400">{results.slope?.toFixed(4) ?? 'N/A'}</p>
-                                        </div>
-                                        <div className="bg-gray-700 p-2 rounded-md">
-                                            <p className="text-xs text-gray-400">Predicted log₂(EASIX) at D+90</p>
-                                            <p className="text-xl font-mono font-bold">{results.predictedDay90?.toFixed(3) ?? 'N/A'}</p>
-                                        </div>
-                                        <div className="bg-gray-700 p-2 rounded-md">
-                                            <p className="text-xs text-gray-400">Predicted log₂(EASIX) at D+120</p>
-                                            <p className="text-xl font-mono font-bold">{results.predictedDay120?.toFixed(3) ?? 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                     <div className="bg-gray-900/50 p-2 rounded-lg">
-                                        <h3 className="text-base font-bold">Group-level 1-Year NRM</h3>
-                                        <div className="mt-1 text-sm text-gray-300">{renderNrmResult()}</div>
+                                    <div className="bg-gray-900/40 p-2 rounded-md text-sm text-gray-300">
+                                        The event rate is computed with the dynamic landmark LME + Cox model once ≥2 labs within +20 to +120 days and a DRI selection are provided.
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-6">
-                                    <p className="text-sm text-gray-400">Enter lab data and click "Compute & Classify" to see results.</p>
+                                    <p className="text-sm text-gray-400">Enter lab data, select DRI, and click "Compute" to see the 2-year event rate.</p>
                                 </div>
                             )}
                         </div>
@@ -462,9 +409,8 @@ const App: React.FC = () => {
                          <div className="bg-gray-800 p-3 rounded-lg shadow-lg text-gray-400 text-xs space-y-2">
                             <h2 className="text-base font-semibold text-white">Disclaimers & Limitations</h2>
                             <ul className="list-disc list-inside space-y-1">
-                                <li>This is a <strong>rule-based stratifier</strong> based on the manuscript, not an individualized probability calculator.</li>
-                                <li>High EASIX is defined as <strong>log₂(EASIX) ≥ 2.32</strong> at approximately day +90.</li>
-                                <li>EASIX calculations can be confounded by factors like platelet transfusions and acute kidney injury. More timepoints yield a more reliable slope.</li>
+                                <li>The model outputs a <strong>predicted 2-year mortality rate</strong> (event rate) derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
+                                <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling—more time points yield more stable predictions.</li>
                                 <li>This tool is for <strong>research and educational purposes only</strong> and should not be the sole basis for clinical decisions.</li>
                             </ul>
                         </div>
