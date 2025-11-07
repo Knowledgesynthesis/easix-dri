@@ -275,7 +275,7 @@ export function classifyRisk(eventRatePercent: number): 'Low' | 'Moderate' | 'Hi
  */
 export async function validatePredictionEngine(): Promise<void> {
   try {
-    const validationData = await import('./validation_test_cases.json');
+    const { default: validationData } = await import('./validation_test_cases.json');
     const cases = validationData.validation_cases;
 
     console.log('='.repeat(60));

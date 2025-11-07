@@ -1,5 +1,5 @@
 // Test script to validate JavaScript predictions against R
-import { validatePredictionEngine } from './dynamicModel';
+import { validatePredictionEngine } from './dynamicModel.ts';
 
 console.log('Starting validation of JavaScript prediction engine...\n');
 

@@ -1,28 +1,4 @@
 {
-  "metadata": {
-    "created_date": "2025-11-06",
-    "model_version": "1.0.0-lme-slope-covariate",
-    "landmark_time_days": 120,
-    "prediction_horizon_days": 730,
-    "n_cases": 4,
-    "description": "Validation test cases with gold-standard R predictions"
-  },
-  "model_parameters": {
-    "time_standardization": {
-      "mean": 66.7838571983,
-      "sd": 25.3348666095
-    },
-    "lme_fixed_effects": {
-      "intercept": 1.4477739852,
-      "time_slope": -0.12064345642,
-      "dri": -0.18140382856
-    },
-    "cox_coefficients": {
-      "dri": 0.7128726143,
-      "log2easix_at_landmark": 0.47192797676,
-      "slope_at_landmark": 17.2046103403
-    }
-  },
   "validation_cases": [
     {
       "patient_id": "13-187-635",
@@ -98,15 +74,18 @@
         }
       ],
       "expected_predictions": {
-        "log2easix_at_landmark": -0.23827242732,
-        "slope_at_landmark": -0.020665024089,
-        "linear_predictor": -0.46798111168,
-        "survival_2yr": 0.91135664144,
-        "event_rate_2yr_percent": 8.8643358562
+        "log2easix_at_landmark": -0.26283862359924914,
+        "slope_at_landmark": -0.020902957103258492,
+        "linear_predictor": -0.1414211676797595,
+        "survival_2yr": 0.9059444396816398,
+        "event_rate_2yr_percent": 9.405556031836015
       },
       "metadata": {
         "n_observations": 17,
-        "days_range": [24, 113],
+        "days_range": [
+          24,
+          113
+        ],
         "mean_log2easix": 1.0155742699
       }
     },
@@ -212,15 +191,18 @@
         }
       ],
       "expected_predictions": {
-        "log2easix_at_landmark": 1.927373276,
-        "slope_at_landmark": -0.0047004224806,
-        "linear_predictor": 0.82871243342,
-        "survival_2yr": 0.71215235009,
-        "event_rate_2yr_percent": 28.7847649914
+        "log2easix_at_landmark": 1.9278620495721457,
+        "slope_at_landmark": -0.004695942870550546,
+        "linear_predictor": 0.922021029482985,
+        "survival_2yr": 0.7511942384478913,
+        "event_rate_2yr_percent": 24.880576155210864
       },
       "metadata": {
         "n_observations": 24,
-        "days_range": [21, 119],
+        "days_range": [
+          21,
+          119
+        ],
         "mean_log2easix": 2.1660154927
       }
     },
@@ -290,15 +272,18 @@
         }
       ],
       "expected_predictions": {
-        "log2easix_at_landmark": 1.3917316103,
-        "slope_at_landmark": 0.0083979998473,
-        "linear_predictor": 0.80128139807,
-        "survival_2yr": 0.71872380019,
-        "event_rate_2yr_percent": 28.1276199808
+        "log2easix_at_landmark": 1.3885130519711444,
+        "slope_at_landmark": 0.008415669139364292,
+        "linear_predictor": 0.6726780141843406,
+        "survival_2yr": 0.8001513828900069,
+        "event_rate_2yr_percent": 19.98486171099931
       },
       "metadata": {
         "n_observations": 15,
-        "days_range": [41, 115],
+        "days_range": [
+          41,
+          115
+        ],
         "mean_log2easix": 0.96198924473
       }
     },
@@ -392,15 +377,18 @@
         }
       ],
       "expected_predictions": {
-        "log2easix_at_landmark": -1.0703627713,
-        "slope_at_landmark": -0.015197255143,
-        "linear_predictor": -0.053724375723,
-        "survival_2yr": 0.86895761436,
-        "event_rate_2yr_percent": 13.1042385636
+        "log2easix_at_landmark": -1.0681645560345123,
+        "slope_at_landmark": -0.01521124802276681,
+        "linear_predictor": 0.10518660527669817,
+        "survival_2yr": 0.8812595857731238,
+        "event_rate_2yr_percent": 11.87404142268762
       },
       "metadata": {
         "n_observations": 21,
-        "days_range": [25, 118],
+        "days_range": [
+          25,
+          118
+        ],
         "mean_log2easix": -0.31520808865
       }
     }
