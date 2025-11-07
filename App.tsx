@@ -222,7 +222,13 @@ const App: React.FC = () => {
         return 'border-green-400 bg-green-500/10 text-green-100';
     };
 
-    const EventRateBadge: React.FC<{ eventRate: number | null }> = ({ eventRate }) => {
+    const getSurvivalTone = (survival: number): string => {
+        if (survival >= 80) return 'border-green-400 bg-green-500/10 text-green-100';
+        if (survival >= 60) return 'border-amber-400 bg-amber-500/10 text-amber-100';
+        return 'border-red-400 bg-red-500/10 text-red-100';
+    };
+
+    const OutcomeMetrics: React.FC<{ eventRate: number | null }> = ({ eventRate }) => {
         if (eventRate === null) {
             return (
                 <div className="px-4 py-2 rounded-lg border border-amber-400 bg-amber-500/10 text-amber-200 text-sm font-semibold text-center">
@@ -231,10 +237,18 @@ const App: React.FC = () => {
             );
         }
 
+        const survival = Math.max(0, Math.min(100, 100 - eventRate));
+
         return (
-            <div className={`px-4 py-3 rounded-lg border text-center shadow-inner ${getEventRateTone(eventRate)}`}>
-                <p className="text-xs uppercase tracking-wide opacity-80">2-year event rate</p>
-                <p className="text-3xl font-bold font-mono">{eventRate.toFixed(1)}%</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                <div className={`px-4 py-3 rounded-lg border text-center shadow-inner ${getEventRateTone(eventRate)}`}>
+                    <p className="text-xs uppercase tracking-wide opacity-80">2-year event rate</p>
+                    <p className="text-3xl font-bold font-mono">{eventRate.toFixed(1)}%</p>
+                </div>
+                <div className={`px-4 py-3 rounded-lg border text-center shadow-inner ${getSurvivalTone(survival)}`}>
+                    <p className="text-xs uppercase tracking-wide opacity-80">2-year overall survival</p>
+                    <p className="text-3xl font-bold font-mono">{survival.toFixed(1)}%</p>
+                </div>
             </div>
         );
     };
@@ -243,8 +257,8 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic EASIX DRI: Rule-Based Stratifier</h1>
-                    <p className="mt-1 text-sm text-gray-400">A research tool for time-dependent EASIX risk stratification.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic EASIX-DRI: 2-year Survival Prediction</h1>
+                    <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine aligned to the manuscript for 2-year event and survival estimates.</p>
                 </header>
 
                 <main className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -354,15 +368,15 @@ const App: React.FC = () => {
                                                 <p className="text-xs text-gray-300 max-w-md">{results.classificationNote}</p>
                                             )}
                                         </div>
-                                        <EventRateBadge eventRate={results.eventRate2yr ?? null} />
+                                        <OutcomeMetrics eventRate={results.eventRate2yr ?? null} />
                                     </div>
                                     <div className="bg-gray-900/40 p-2 rounded-md text-sm text-gray-300">
-                                        The event rate is computed with the dynamic landmark LME + Cox model once ≥2 labs within +20 to +120 days and a DRI selection are provided.
+                                        Predictions display the 2-year event rate and complementary overall survival once ≥2 labs within +20 to +120 days and a DRI selection are provided.
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-6">
-                                    <p className="text-sm text-gray-400">Enter lab data, select DRI, and click "Compute" to see the 2-year event rate.</p>
+                                    <p className="text-sm text-gray-400">Enter lab data, select DRI, and click "Compute" to see the 2-year event rate and overall survival.</p>
                                 </div>
                             )}
                         </div>
@@ -409,7 +423,7 @@ const App: React.FC = () => {
                          <div className="bg-gray-800 p-3 rounded-lg shadow-lg text-gray-400 text-xs space-y-2">
                             <h2 className="text-base font-semibold text-white">Disclaimers & Limitations</h2>
                             <ul className="list-disc list-inside space-y-1">
-                                <li>The model outputs a <strong>predicted 2-year mortality rate</strong> (event rate) derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
+                                <li>The model outputs <strong>predicted 2-year mortality and overall survival rates</strong> derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
                                 <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling—more time points yield more stable predictions.</li>
                                 <li>This tool is for <strong>research and educational purposes only</strong> and should not be the sole basis for clinical decisions.</li>
                             </ul>

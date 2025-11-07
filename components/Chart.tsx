@@ -12,23 +12,29 @@ interface ChartProps {
 
 const PADDING = { top: 20, right: 20, bottom: 40, left: 50 };
 const DAY_RANGE = { min: 20, max: 120 };
-const THRESHOLD = 2.32;
 
 export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, height }) => {
   const chartWidth = width - PADDING.left - PADDING.right;
   const chartHeight = height - PADDING.top - PADDING.bottom;
 
   const yValues = points.map(p => p.log2Easix);
-  const yMinDomain = Math.min(...yValues, THRESHOLD - 0.5, 1.0);
-  const yMaxDomain = Math.max(...yValues, THRESHOLD + 0.5, 3.5);
-  const yDomain = points.length > 0 ? [yMinDomain, yMaxDomain] : [0, 4];
+  const DEFAULT_DOMAIN: [number, number] = [0, 4];
+  const padding = 0.4;
+  let yMinDomain = yValues.length ? Math.min(...yValues) - padding : DEFAULT_DOMAIN[0];
+  let yMaxDomain = yValues.length ? Math.max(...yValues) + padding : DEFAULT_DOMAIN[1];
+  if (yMaxDomain - yMinDomain < 1) {
+    const mid = (yMaxDomain + yMinDomain) / 2;
+    yMinDomain = mid - 0.5;
+    yMaxDomain = mid + 0.5;
+  }
+  const yDomain: [number, number] = [yMinDomain, yMaxDomain];
   
   const xScale = (day: number) => PADDING.left + ((day - DAY_RANGE.min) / (DAY_RANGE.max - DAY_RANGE.min)) * chartWidth;
   const yScale = (val: number) => PADDING.top + chartHeight - ((val - yDomain[0]) / (yDomain[1] - yDomain[0])) * chartHeight;
 
-  const yTicks = [];
-  for (let i = Math.ceil(yDomain[0]); i <= Math.floor(yDomain[1]); i+=0.5) {
-      if(i>=yDomain[0] && i<=yDomain[1]) yTicks.push(i);
+  const yTicks: number[] = [];
+  for (let i = Math.ceil(yDomain[0]); i <= Math.floor(yDomain[1]); i += 0.5) {
+      if (i >= yDomain[0] && i <= yDomain[1]) yTicks.push(i);
   }
 
   const xTicks = [20, 40, 60, 80, 100, 120];
@@ -57,22 +63,6 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
            </g>
         ))}
         <text transform={`rotate(-90)`} x={-(PADDING.top + chartHeight / 2)} y={15} textAnchor="middle" fill="currentColor" className="font-semibold">log₂(EASIX)</text>
-      </g>
-      
-      {/* Threshold Line */}
-      <g>
-        <line
-          x1={PADDING.left}
-          y1={yScale(THRESHOLD)}
-          x2={width - PADDING.right}
-          y2={yScale(THRESHOLD)}
-          stroke="orange"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-        />
-        <text x={width - PADDING.right - 5} y={yScale(THRESHOLD) - 5} textAnchor="end" fill="orange" className="text-sm font-bold">
-          Threshold = {THRESHOLD}
-        </text>
       </g>
       
       {/* Regression Line */}

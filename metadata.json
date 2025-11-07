@@ -1,5 +1,5 @@
 
 {
-  "name": "Dynamic EASIX DRI: Rule-Based Stratifier",
-  "description": "A client-side tool to dynamically calculate EASIX scores, fit a regression line to log₂(EASIX) over time, and stratify risk based on a day +90 threshold. Includes data visualization and group-level outcome displays based on the manuscript."
+  "name": "Dynamic EASIX-DRI: 2-year Survival Predictor",
+  "description": "Client-side landmark LME + Cox engine that estimates 2-year overall survival and event rates using longitudinal EASIX trends, matching the manuscript implementation."
 }
