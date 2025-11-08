@@ -46,3 +46,8 @@ robust_output.log
 # Note: model_coefficients.json and validation_test_cases.json WILL be tracked
 # These are needed for the app to function
 AGENTS.md
+
+# Test files and implementation documentation
+test-files/
+test-parser.ts
+IMPLEMENTATION-SUMMARY.md

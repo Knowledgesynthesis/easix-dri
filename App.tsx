@@ -5,6 +5,7 @@ import { MiniGauge } from './components/MiniGauge';
 import { useEasixCalculation } from './hooks/useEasixCalculation';
 import type { LabRow, CalculationResult } from './types';
 import { DRI } from './types';
+import { parseFile } from './utils/fileParser';
 
 const PlusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
@@ -46,96 +47,12 @@ const downloadSampleCSV = () => {
     URL.revokeObjectURL(url);
 };
 
-// Fuzzy column matching
-const matchColumn = (headers: string[], possibleNames: string[]): number => {
-    const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
-    const normalizedPossible = possibleNames.map(n => n.toLowerCase().trim());
-
-    for (const possible of normalizedPossible) {
-        const index = normalizedHeaders.findIndex(h => h.includes(possible) || possible.includes(h));
-        if (index !== -1) return index;
-    }
-    return -1;
-};
-
-interface CSVParseResult {
-    imported: LabRow[];
-    missingValues: number;
-    outOfRange: number;
-    complete: number;
-    error?: string;
-}
-
-const parseCSV = (csvText: string): CSVParseResult => {
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) {
-        return { imported: [], missingValues: 0, outOfRange: 0, complete: 0, error: 'CSV file is empty or has no data rows' };
-    }
-
-    const headers = lines[0].split(',').map(h => h.trim());
-
-    // Try to match columns with fuzzy matching
-    const dayIdx = matchColumn(headers, ['day', 'days', 'day post-transplant', 'd+', 'post-transplant day']);
-    const ldhIdx = matchColumn(headers, ['ldh', 'lactate dehydrogenase', 'lactate']);
-    const creatinineIdx = matchColumn(headers, ['creatinine', 'cr', 'creat']);
-    const plateletsIdx = matchColumn(headers, ['platelet', 'platelets', 'plt', 'platelet count']);
-
-    if (dayIdx === -1 || ldhIdx === -1 || creatinineIdx === -1 || plateletsIdx === -1) {
-        return {
-            imported: [],
-            missingValues: 0,
-            outOfRange: 0,
-            complete: 0,
-            error: `Could not find required columns. Found: ${headers.join(', ')}. Please use Day, LDH, Creatinine, Platelets`
-        };
-    }
-
-    const imported: LabRow[] = [];
-    let missingValues = 0;
-    let outOfRange = 0;
-    let complete = 0;
-
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const values = line.split(',').map(v => v.trim());
-
-        const day = values[dayIdx];
-        const ldh = values[ldhIdx];
-        const creatinine = values[creatinineIdx];
-        const platelets = values[plateletsIdx];
-
-        // Check if day is in range (20-120)
-        const dayNum = parseFloat(day);
-        if (!isNaN(dayNum) && (dayNum < 20 || dayNum > 120)) {
-            outOfRange++;
-            continue; // Skip this row
-        }
-
-        // Check for missing values (import anyway, but count them)
-        const hasMissing = !day || !ldh || !creatinine || !platelets;
-        if (hasMissing) {
-            missingValues++;
-        } else {
-            complete++;
-        }
-
-        imported.push({
-            id: crypto.randomUUID(),
-            day: day || '',
-            ldh: ldh || '',
-            creatinine: creatinine || '',
-            platelets: platelets || ''
-        });
-    }
-
-    return { imported, missingValues, outOfRange, complete };
-};
+// Note: Old CSV parsing logic moved to utils/fileParser.ts for better organization
 
 const App: React.FC = () => {
     const [labRows, setLabRows] = useState<LabRow[]>([]);
     const [dri, setDri] = useState<DRI | ''>('');
+    const [transplantDate, setTransplantDate] = useState<string>('');
     const [results, setResults] = useState<CalculationResult | null>(null);
     const [showPointsTable, setShowPointsTable] = useState(false);
     const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
@@ -159,6 +76,8 @@ const App: React.FC = () => {
 
     const handleClear = () => {
         setLabRows([]);
+        setTransplantDate('');
+        setDri('');
         setResults(null);
         setUploadMessage(null);
     };
@@ -169,47 +88,49 @@ const App: React.FC = () => {
         setUploadMessage(null);
     };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            const result = parseCSV(text);
-
-            if (result.error) {
-                setUploadMessage({ type: 'error', text: result.error });
-                return;
-            }
-
-            setLabRows(result.imported);
-            setResults(null);
-
-            // Build success message
-            const messages: string[] = [];
-            messages.push(`✓ Successfully imported ${result.imported.length} lab ${result.imported.length === 1 ? 'entry' : 'entries'} (${result.complete} ${result.complete === 1 ? 'contributes' : 'contribute'} to computation)`);
-
-            if (result.missingValues > 0) {
-                messages.push(`⚠ ${result.missingValues} ${result.missingValues === 1 ? 'entry has' : 'entries have'} missing values (can be filled manually)`);
-            }
-
-            if (result.outOfRange > 0) {
-                messages.push(`ℹ ${result.outOfRange} ${result.outOfRange === 1 ? 'entry' : 'entries'} outside day 20-120 ${result.outOfRange === 1 ? 'was' : 'were'} excluded`);
-            }
-
-            setUploadMessage({
-                type: result.missingValues > 0 ? 'warning' : 'success',
-                text: messages.join('. ')
-            });
-        };
-
-        reader.readAsText(file);
 
         // Reset file input so same file can be uploaded again
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+
+        const result = await parseFile(file, transplantDate || null);
+
+        if (result.needsTransplantDate) {
+            setUploadMessage({
+                type: 'warning',
+                text: '⚠ Please enter the transplant date (HSCT) above to import labs with date timestamps'
+            });
+            return;
+        }
+
+        if (result.error) {
+            setUploadMessage({ type: 'error', text: result.error });
+            return;
+        }
+
+        setLabRows(result.imported);
+        setResults(null);
+
+        // Build success message
+        const messages: string[] = [];
+        messages.push(`✓ Successfully imported ${result.imported.length} lab ${result.imported.length === 1 ? 'entry' : 'entries'} (${result.complete} ${result.complete === 1 ? 'contributes' : 'contribute'} to computation)`);
+
+        if (result.missingValues > 0) {
+            messages.push(`⚠ ${result.missingValues} ${result.missingValues === 1 ? 'entry has' : 'entries have'} missing values (can be filled manually)`);
+        }
+
+        if (result.outOfRange > 0) {
+            messages.push(`ℹ ${result.outOfRange} ${result.outOfRange === 1 ? 'entry' : 'entries'} outside day 20-120 ${result.outOfRange === 1 ? 'was' : 'were'} excluded`);
+        }
+
+        setUploadMessage({
+            type: result.missingValues > 0 ? 'warning' : 'success',
+            text: messages.join('. ')
+        });
     };
 
     const triggerFileUpload = () => {
@@ -243,16 +164,29 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic EASIX-DRI: 2-year Survival Prediction</h1>
-                    <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine aligned to the manuscript for 2-year event-rate estimates.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic EASIX-DRI: 2-year Event Rate Prediction</h1>
+                    <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine for 2-year event-rate estimates</p>
                 </header>
 
-                <main className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                <main className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Left Column: Inputs */}
-                    <div className="lg:col-span-2 space-y-3">
+                    <div className="space-y-3">
+                        {/* Transplant Date */}
+                        <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
+                            <h2 className="text-lg font-semibold mb-2 text-white">1. Transplant Date (HSCT)</h2>
+                            <label htmlFor="transplantDate" className="block text-xs font-medium text-gray-300 mb-0.5">Date of transplantation (required when uploading files with dates; optional for files with day numbers)</label>
+                            <input
+                                type="date"
+                                id="transplantDate"
+                                value={transplantDate}
+                                onChange={e => setTransplantDate(e.target.value)}
+                                className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500"
+                            />
+                        </div>
+
                         {/* Lab Inputs */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">1. Transplant Labs (Day +20 to +120)</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">2. Transplant Labs (Day +20 to +120)</h2>
                             <div className="space-y-2">
                                 {labRows.map((row) => (
                                     <div key={row.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-gray-900/50 p-2 rounded-md">
@@ -303,7 +237,7 @@ const App: React.FC = () => {
                                     <DownloadIcon /> Download Sample CSV
                                 </button>
                                 <button onClick={triggerFileUpload} className="flex items-center gap-1 text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors">
-                                    <UploadIcon /> Upload CSV
+                                    <UploadIcon /> Upload CSV/Excel
                                 </button>
                             </div>
 
@@ -312,14 +246,14 @@ const App: React.FC = () => {
                                 type="file"
                                 ref={fileInputRef}
                                 onChange={handleFileUpload}
-                                accept=".csv"
+                                accept=".csv,.xlsx,.xls"
                                 className="hidden"
                             />
                         </div>
 
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">2. Disease Risk Index</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">3. Disease Risk Index (DRI)</h2>
                             <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">High/Very High vs. Low/Intermediate (required for event-rate prediction)</label>
                             <select id="dri" value={dri} onChange={e => setDri(e.target.value as DRI)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
                                 <option value="">Select...</option>
@@ -342,7 +276,7 @@ const App: React.FC = () => {
                     </div>
                     
                     {/* Right Column: Outputs */}
-                    <div className="lg:col-span-3 space-y-3">
+                    <div className="space-y-3">
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold mb-2 text-white">Dynamic Prediction</h2>
                              {results ? (
@@ -369,7 +303,7 @@ const App: React.FC = () => {
 
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold mb-2 text-white">Visualization</h2>
-                            <div className="h-64 w-full">
+                            <div className="w-full">
                                 <Chart points={results?.points || []} slope={results?.slope || null} intercept={results?.intercept || null} width={600} height={256} />
                             </div>
                         </div>
@@ -409,9 +343,11 @@ const App: React.FC = () => {
                          <div className="bg-gray-800 p-3 rounded-lg shadow-lg text-gray-400 text-xs space-y-2">
                             <h2 className="text-base font-semibold text-white">Disclaimers & Limitations</h2>
                             <ul className="list-disc list-inside space-y-1">
+                                <li><strong>Abbreviations:</strong> EASIX = Endothelial Activation and Stress Index; DRI = Disease Risk Index; LME = Linear Mixed-Effects model</li>
                                 <li>The model outputs a <strong>predicted 2-year mortality rate</strong> (event rate) derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
-                                <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling—more time points yield more stable predictions.</li>
+                                <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling. More time points yield more stable predictions.</li>
                                 <li>This tool is for <strong>research and educational purposes only</strong> and should not be the sole basis for clinical decisions.</li>
+                                <li><strong>Privacy & Data Security:</strong> All data processing happens locally in your browser. Uploaded files and entered data are never sent to any server or stored anywhere. Everything remains on your device.</li>
                             </ul>
                         </div>
                     </div>
