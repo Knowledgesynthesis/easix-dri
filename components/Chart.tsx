@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { Point } from '../types';
 
 interface ChartProps {
@@ -14,6 +14,7 @@ const PADDING = { top: 20, right: 20, bottom: 40, left: 50 };
 const DAY_RANGE = { min: 20, max: 120 };
 
 export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, height }) => {
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const chartWidth = width - PADDING.left - PADDING.right;
   const chartHeight = height - PADDING.top - PADDING.bottom;
 
@@ -74,15 +75,51 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
 
       {/* Data Points */}
       {points.map((p, i) => (
-        <circle
-          key={`point-${i}`}
-          cx={xScale(p.day)}
-          cy={yScale(p.log2Easix)}
-          r="4"
-          fill="#22d3ee" // cyan-400
-          stroke="#111827"
-          strokeWidth="1"
-        />
+        <g key={`point-${i}`}>
+          <circle
+            cx={xScale(p.day)}
+            cy={yScale(p.log2Easix)}
+            r={hoveredPoint === i ? "6" : "4"}
+            fill="#22d3ee" // cyan-400
+            stroke="#111827"
+            strokeWidth="1"
+            onMouseEnter={() => setHoveredPoint(i)}
+            onMouseLeave={() => setHoveredPoint(null)}
+            style={{ cursor: 'pointer', transition: 'r 0.15s ease' }}
+          />
+          {hoveredPoint === i && (
+            <g>
+              <rect
+                x={xScale(p.day) + 10}
+                y={yScale(p.log2Easix) - 30}
+                width="110"
+                height="40"
+                fill="#1f2937"
+                stroke="#22d3ee"
+                strokeWidth="1"
+                rx="4"
+              />
+              <text
+                x={xScale(p.day) + 15}
+                y={yScale(p.log2Easix) - 15}
+                fill="#e5e7eb"
+                fontSize="11"
+                fontWeight="600"
+              >
+                Day: {p.day}
+              </text>
+              <text
+                x={xScale(p.day) + 15}
+                y={yScale(p.log2Easix) - 2}
+                fill="#e5e7eb"
+                fontSize="11"
+                fontWeight="600"
+              >
+                log₂(EASIX): {p.log2Easix.toFixed(2)}
+              </text>
+            </g>
+          )}
+        </g>
       ))}
     </svg>
   );
