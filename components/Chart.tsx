@@ -11,7 +11,7 @@ interface ChartProps {
 }
 
 const PADDING = { top: 20, right: 20, bottom: 40, left: 50 };
-const DAY_RANGE = { min: 0, max: 120 };
+const DAY_RANGE = { min: 20, max: 120 };
 
 export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, height }) => {
   const chartWidth = width - PADDING.left - PADDING.right;
@@ -19,12 +19,9 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
 
   const yValues = points.map(p => p.log2Easix);
   const DEFAULT_DOMAIN: [number, number] = [0, 4];
-  const padding = 0.4;
-  const yMinDomain = 0; // Always start Y-axis at 0
-  let yMaxDomain = yValues.length ? Math.max(...yValues) + padding : DEFAULT_DOMAIN[1];
-  if (yMaxDomain < 1) {
-    yMaxDomain = 1; // Minimum range
-  }
+  const padding = 0.5;
+  const yMinDomain = yValues.length ? Math.min(...yValues) - padding : DEFAULT_DOMAIN[0];
+  const yMaxDomain = yValues.length ? Math.max(...yValues) + padding : DEFAULT_DOMAIN[1];
   const yDomain: [number, number] = [yMinDomain, yMaxDomain];
   
   const xScale = (day: number) => PADDING.left + ((day - DAY_RANGE.min) / (DAY_RANGE.max - DAY_RANGE.min)) * chartWidth;
@@ -35,7 +32,7 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
       if (i >= yDomain[0] && i <= yDomain[1]) yTicks.push(i);
   }
 
-  const xTicks = [0, 20, 40, 60, 80, 100, 120];
+  const xTicks = [20, 40, 60, 80, 100, 120];
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="bg-gray-800 rounded-lg w-full h-auto" preserveAspectRatio="xMidYMid meet">
