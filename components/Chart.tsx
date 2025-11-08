@@ -15,6 +15,7 @@ const DAY_RANGE = { min: 20, max: 120 };
 
 export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, height }) => {
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [hoveredLine, setHoveredLine] = useState<boolean>(false);
   const chartWidth = width - PADDING.left - PADDING.right;
   const chartHeight = height - PADDING.top - PADDING.bottom;
 
@@ -63,14 +64,55 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
       
       {/* Regression Line */}
       {slope !== null && intercept !== null && (
-        <line
-          x1={xScale(DAY_RANGE.min)}
-          y1={yScale(intercept + slope * DAY_RANGE.min)}
-          x2={xScale(DAY_RANGE.max)}
-          y2={yScale(intercept + slope * DAY_RANGE.max)}
-          stroke="#22d3ee" // cyan-400
-          strokeWidth="2"
-        />
+        <g>
+          {/* Visible line */}
+          <line
+            x1={xScale(DAY_RANGE.min)}
+            y1={yScale(intercept + slope * DAY_RANGE.min)}
+            x2={xScale(DAY_RANGE.max)}
+            y2={yScale(intercept + slope * DAY_RANGE.max)}
+            stroke="#22d3ee" // cyan-400
+            strokeWidth={hoveredLine ? "3" : "2"}
+            style={{ transition: 'stroke-width 0.15s ease' }}
+          />
+          {/* Invisible wider line for easier hovering */}
+          <line
+            x1={xScale(DAY_RANGE.min)}
+            y1={yScale(intercept + slope * DAY_RANGE.min)}
+            x2={xScale(DAY_RANGE.max)}
+            y2={yScale(intercept + slope * DAY_RANGE.max)}
+            stroke="transparent"
+            strokeWidth="12"
+            onMouseEnter={() => setHoveredLine(true)}
+            onMouseLeave={() => setHoveredLine(false)}
+            style={{ cursor: 'pointer' }}
+          />
+          {/* Tooltip for slope */}
+          {hoveredLine && (
+            <g>
+              <rect
+                x={xScale((DAY_RANGE.min + DAY_RANGE.max) / 2) - 55}
+                y={yScale(intercept + slope * ((DAY_RANGE.min + DAY_RANGE.max) / 2)) - 35}
+                width="110"
+                height="25"
+                fill="#1f2937"
+                stroke="#22d3ee"
+                strokeWidth="1"
+                rx="4"
+              />
+              <text
+                x={xScale((DAY_RANGE.min + DAY_RANGE.max) / 2)}
+                y={yScale(intercept + slope * ((DAY_RANGE.min + DAY_RANGE.max) / 2)) - 18}
+                fill="#e5e7eb"
+                fontSize="11"
+                fontWeight="600"
+                textAnchor="middle"
+              >
+                Slope: {slope.toFixed(4)} log₂/day
+              </text>
+            </g>
+          )}
+        </g>
       )}
 
       {/* Data Points */}
