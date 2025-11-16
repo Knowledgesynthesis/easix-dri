@@ -35,6 +35,7 @@ MODEL_IMPLEMENTATION_PLAN.md
 *.xlsx
 dtrain.xlsx
 MODEL_FITTING_SUMMARY.md
+MODEL_UPDATE_*.md
 incremental_output.log
 robust_output.log
 
@@ -45,6 +46,11 @@ robust_output.log
 
 # Note: model_coefficients.json and validation_test_cases.json WILL be tracked
 # These are needed for the app to function
+
+# Model coefficient backups (keep locally for reference)
+model_coefficients_original_backup.json
+*_backup.json
+
 AGENTS.md
 
 # Test files and implementation documentation
