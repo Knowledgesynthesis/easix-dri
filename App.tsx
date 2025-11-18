@@ -168,7 +168,7 @@ const App: React.FC = () => {
                     <p className="mt-1 text-base text-cyan-300">Based on patients Dynamic-EASIX and DRI</p>
 
                     {/* Background Section */}
-                    <div className="mt-4 bg-gray-800 p-4 rounded-lg shadow-lg text-left max-w-4xl mx-auto">
+                    <div className="mt-4 bg-gray-800 p-4 rounded-lg shadow-lg text-left">
                         <h2 className="text-lg font-semibold text-white mb-2">Background</h2>
                         <p className="text-sm text-gray-300 leading-relaxed">
                             Here, we provide a survival calculator for patients who have survived the early post-transplant period (approximately days 90–120) after allogeneic HCT. The model integrates the pre-transplant Disease Risk Index (DRI) with dynamic changes in the EASIX score from day 20 to day 120 to estimate individualized post-transplant survival.
@@ -264,9 +264,11 @@ const App: React.FC = () => {
 
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">3. Disease Risk Index (DRI)</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">
+                                3. Disease Risk Index (DRI) <span className="text-xs font-normal text-gray-400">(can be calculated <a href="https://cibmtr.org/CIBMTR/Resources/Research-Tools-Calculators/Disease-Risk-Index-DRI-Assignment-Tool" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">here</a>)</span>
+                            </h2>
                             <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">
-                                Can be calculated <a href="https://cibmtr.org/CIBMTR/Resources/Research-Tools-Calculators/Disease-Risk-Index-DRI-Assignment-Tool" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">here</a>. High/Very High vs. Low/Intermediate (required for mortality rate prediction)
+                                High/Very High vs. Low/Intermediate (required for mortality rate prediction)
                             </label>
                             <select id="dri" value={dri} onChange={e => setDri(e.target.value as DRI)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
                                 <option value="">Select...</option>
@@ -275,11 +277,11 @@ const App: React.FC = () => {
                         </div>
 
                          <div className="flex items-center gap-2">
-                            <button onClick={handleCompute} className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded-lg transition-colors text-base shadow-md">
-                                Compute
-                            </button>
                             <button onClick={loadExample} className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-3 rounded-lg transition-colors shadow-md text-sm">
                                 Load Example
+                            </button>
+                            <button onClick={handleCompute} className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded-lg transition-colors text-base shadow-md">
+                                Compute
                             </button>
                             <button onClick={handleClear} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg transition-colors shadow-md text-sm">
                                 Clear
