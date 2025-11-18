@@ -154,7 +154,7 @@ const App: React.FC = () => {
 
         return (
             <div className={`px-4 py-3 rounded-lg border text-center shadow-inner ${getEventRateTone(eventRate)}`}>
-                <p className="text-xs uppercase tracking-wide opacity-80">2-year event rate</p>
+                <p className="text-xs uppercase tracking-wide opacity-80">2-Year Mortality Rate</p>
                 <p className="text-3xl font-bold font-mono">{eventRate.toFixed(1)}%</p>
             </div>
         );
@@ -164,8 +164,8 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic EASIX-DRI: 2-year Event Rate Prediction</h1>
-                    <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine for 2-year event-rate estimates</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk Reduction Model: 2-Year Mortality Rate Post-Allogeneic Stem Cell Transplant</h1>
+                    <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine for 2-year mortality rate estimates</p>
                 </header>
 
                 <main className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -173,7 +173,7 @@ const App: React.FC = () => {
                     <div className="space-y-3">
                         {/* Transplant Date */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">1. Transplant Date (HSCT)</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">1. Transplant Date</h2>
                             <label htmlFor="transplantDate" className="block text-xs font-medium text-gray-300 mb-0.5">Date of transplantation (required when uploading files with dates; optional for files with day numbers)</label>
                             <input
                                 type="date"
@@ -191,9 +191,12 @@ const App: React.FC = () => {
                                 {labRows.map((row) => (
                                     <div key={row.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-gray-900/50 p-2 rounded-md">
                                         <div>
-                                            <label className="block text-xs text-gray-400 mb-0.5">Day</label>
+                                            <div className="flex gap-1 items-end mb-0.5">
+                                                <div className="w-5 h-4"></div>
+                                                <label className="block text-xs text-gray-400">Day</label>
+                                            </div>
                                             <div className="flex gap-1 items-center">
-                                                <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0">
+                                                <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 w-5">
                                                     <TrashIcon />
                                                 </button>
                                                 <input type="number" value={row.day} onChange={e => updateRow(row.id, 'day', e.target.value)} placeholder="e.g. 30" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
@@ -205,12 +208,12 @@ const App: React.FC = () => {
                                             <MiniGauge value={parseFloat(row.ldh) || null} range={[140, 280]} label="Normal" labType="ldh" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-gray-400 mb-0.5">Creatinine</label>
+                                            <label className="block text-xs text-gray-400 mb-0.5">Creatinine (mg/dL)</label>
                                             <input type="number" step="0.1" value={row.creatinine} onChange={e => updateRow(row.id, 'creatinine', e.target.value)} placeholder="e.g. 0.9" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
                                             <MiniGauge value={parseFloat(row.creatinine) || null} range={[0.6, 1.3]} label="Normal" labType="creatinine" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-gray-400 mb-0.5">Platelets</label>
+                                            <label className="block text-xs text-gray-400 mb-0.5">Platelets (×10⁹/L)</label>
                                             <input type="number" value={row.platelets} onChange={e => updateRow(row.id, 'platelets', e.target.value)} placeholder="e.g. 150" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
                                             <MiniGauge value={parseFloat(row.platelets) || null} range={[150, 400]} label="Normal" labType="platelets" />
                                         </div>
@@ -254,7 +257,9 @@ const App: React.FC = () => {
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold mb-2 text-white">3. Disease Risk Index (DRI)</h2>
-                            <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">High/Very High vs. Low/Intermediate (required for event-rate prediction)</label>
+                            <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">
+                                High/Very High vs. Low/Intermediate (required for mortality rate prediction; can be calculated <a href="https://cibmtr.org/CIBMTR/Resources/Research-Tools-Calculators/Disease-Risk-Index-DRI-Assignment-Tool" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">here</a>)
+                            </label>
                             <select id="dri" value={dri} onChange={e => setDri(e.target.value as DRI)} className="w-full bg-gray-700 border-gray-600 rounded-md p-1.5 text-sm focus:ring-cyan-500 focus:border-cyan-500">
                                 <option value="">Select...</option>
                                 {Object.values(DRI).map(d => <option key={d} value={d}>{d}</option>)}
@@ -278,31 +283,31 @@ const App: React.FC = () => {
                     {/* Right Column: Outputs */}
                     <div className="space-y-3">
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">Dynamic Prediction</h2>
                              {results ? (
                                 <div className="space-y-3">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-gray-900/50 p-2 rounded-lg">
-                                        <div>
-                                            <h3 className="text-base font-bold">Landmark Model Output</h3>
-                                            {results.classificationNote && results.eventRate2yr === null && (
-                                                <p className="text-xs text-gray-300 max-w-md">{results.classificationNote}</p>
-                                            )}
-                                        </div>
+                                        <h2 className="text-lg font-semibold text-white">Dynamic Prediction</h2>
                                         <EventRateBadge eventRate={results.eventRate2yr ?? null} />
                                     </div>
+                                    {results.classificationNote && results.eventRate2yr === null && (
+                                        <p className="text-xs text-gray-300 max-w-md">{results.classificationNote}</p>
+                                    )}
                                     <div className="bg-gray-900/40 p-2 rounded-md text-sm text-gray-300">
-                                        Predictions display the 2-year event rate once ≥2 labs within +20 to +120 days and a DRI selection are provided.
+                                        Predictions display the 2-year mortality rate once ≥2 labs within +20 to +120 days post-transplant and a DRI selection are provided.
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-6">
-                                    <p className="text-sm text-gray-400">Enter lab data, select DRI, and click "Compute" to see the 2-year event rate.</p>
-                                </div>
+                                <>
+                                    <h2 className="text-lg font-semibold mb-2 text-white">Dynamic Prediction</h2>
+                                    <div className="text-center py-6">
+                                        <p className="text-sm text-gray-400">Enter lab data, select DRI, and click "Compute" to see the 2-year mortality rate.</p>
+                                    </div>
+                                </>
                             )}
                         </div>
 
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">Visualization</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">Log2 EASIX Trend</h2>
                             <div className="w-full">
                                 <Chart points={results?.points || []} slope={results?.slope || null} intercept={results?.intercept || null} width={600} height={256} />
                             </div>
@@ -310,7 +315,7 @@ const App: React.FC = () => {
 
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
                             <button onClick={() => setShowPointsTable(!showPointsTable)} className="w-full flex justify-between items-center text-left text-base font-semibold text-white">
-                                <span>Show Computed Points</span>
+                                <span>View Computed Points</span>
                                 <ChevronDownIcon />
                             </button>
                             {showPointsTable && results && (
@@ -344,7 +349,7 @@ const App: React.FC = () => {
                             <h2 className="text-base font-semibold text-white">Disclaimers & Limitations</h2>
                             <ul className="list-disc list-inside space-y-1">
                                 <li><strong>Abbreviations:</strong> EASIX = Endothelial Activation and Stress Index; DRI = Disease Risk Index; LME = Linear Mixed-Effects model</li>
-                                <li>The model outputs a <strong>predicted 2-year mortality rate</strong> (event rate) derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
+                                <li>The model outputs a <strong>predicted 2-year mortality rate</strong> derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
                                 <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling. More time points yield more stable predictions.</li>
                                 <li>This tool is for <strong>research and educational purposes only</strong> and should not be the sole basis for clinical decisions.</li>
                                 <li><strong>Privacy & Data Security:</strong> All data processing happens locally in your browser. Uploaded files and entered data are never sent to any server or stored anywhere. Everything remains on your device.</li>
