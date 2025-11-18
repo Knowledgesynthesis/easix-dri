@@ -164,7 +164,7 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk Reduction Model: 2-Year Mortality Rate Post-Allogeneic Stem Cell Transplant</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk Prediction Model: 2-Year Mortality Rate Post-Allogeneic Stem Cell Transplant</h1>
                     <p className="mt-1 text-sm text-gray-400">Landmark LME + Cox engine for 2-year mortality rate estimates</p>
                 </header>
 
