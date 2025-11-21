@@ -80,6 +80,150 @@ export interface PredictionResult {
 const model = modelCoefficients as ModelParameters;
 
 // ============================================================================
+// Matrix Utility Functions (for BLUP calculation)
+// ============================================================================
+
+type Matrix = number[][];
+type Vector = number[];
+
+/**
+ * Create an n×n identity matrix
+ */
+function eye(n: number): Matrix {
+  const result: Matrix = [];
+  for (let i = 0; i < n; i++) {
+    result[i] = [];
+    for (let j = 0; j < n; j++) {
+      result[i][j] = i === j ? 1 : 0;
+    }
+  }
+  return result;
+}
+
+/**
+ * Multiply a scalar by a matrix
+ */
+function scalarMultiply(scalar: number, A: Matrix): Matrix {
+  return A.map(row => row.map(val => scalar * val));
+}
+
+/**
+ * Add two matrices element-wise
+ */
+function matrixAdd(A: Matrix, B: Matrix): Matrix {
+  return A.map((row, i) => row.map((val, j) => val + B[i][j]));
+}
+
+/**
+ * Transpose a matrix
+ */
+function transpose(A: Matrix): Matrix {
+  const rows = A.length;
+  const cols = A[0].length;
+  const result: Matrix = [];
+  for (let j = 0; j < cols; j++) {
+    result[j] = [];
+    for (let i = 0; i < rows; i++) {
+      result[j][i] = A[i][j];
+    }
+  }
+  return result;
+}
+
+/**
+ * Multiply two matrices A (m×n) × B (n×p) = C (m×p)
+ */
+function matrixMultiply(A: Matrix, B: Matrix): Matrix {
+  const m = A.length;
+  const n = A[0].length;
+  const p = B[0].length;
+
+  const result: Matrix = [];
+  for (let i = 0; i < m; i++) {
+    result[i] = [];
+    for (let j = 0; j < p; j++) {
+      let sum = 0;
+      for (let k = 0; k < n; k++) {
+        sum += A[i][k] * B[k][j];
+      }
+      result[i][j] = sum;
+    }
+  }
+  return result;
+}
+
+/**
+ * Multiply matrix A (m×n) by vector v (n×1) = result (m×1)
+ */
+function matrixVectorMultiply(A: Matrix, v: Vector): Vector {
+  return A.map(row => row.reduce((sum, val, j) => sum + val * v[j], 0));
+}
+
+/**
+ * Invert a matrix using Gaussian elimination with partial pivoting
+ * Works for any n×n matrix
+ */
+function matrixInverse(A: Matrix): Matrix {
+  const n = A.length;
+
+  // Create augmented matrix [A | I]
+  const aug: Matrix = [];
+  for (let i = 0; i < n; i++) {
+    aug[i] = [...A[i]];
+    for (let j = 0; j < n; j++) {
+      aug[i].push(i === j ? 1 : 0);
+    }
+  }
+
+  // Forward elimination with partial pivoting
+  for (let col = 0; col < n; col++) {
+    // Find pivot
+    let maxRow = col;
+    let maxVal = Math.abs(aug[col][col]);
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > maxVal) {
+        maxVal = Math.abs(aug[row][col]);
+        maxRow = row;
+      }
+    }
+
+    // Swap rows
+    if (maxRow !== col) {
+      [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+    }
+
+    // Check for singular matrix
+    if (Math.abs(aug[col][col]) < 1e-12) {
+      throw new Error('Matrix is singular or nearly singular');
+    }
+
+    // Scale pivot row
+    const pivot = aug[col][col];
+    for (let j = 0; j < 2 * n; j++) {
+      aug[col][j] /= pivot;
+    }
+
+    // Eliminate column
+    for (let row = 0; row < n; row++) {
+      if (row !== col) {
+        const factor = aug[row][col];
+        for (let j = 0; j < 2 * n; j++) {
+          aug[row][j] -= factor * aug[col][j];
+        }
+      }
+    }
+  }
+
+  // Extract inverse from augmented matrix
+  const inverse: Matrix = [];
+  for (let i = 0; i < n; i++) {
+    inverse[i] = aug[i].slice(n);
+  }
+
+  return inverse;
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -92,30 +236,6 @@ function standardizeTime(day: number): number {
     throw new Error('Time standardization parameters not available');
   }
   return (day - mean) / sd;
-}
-
-/**
- * Perform simple linear regression (OLS)
- * Returns { intercept, slope }
- */
-function simpleLinearRegression(x: number[], y: number[]): { intercept: number; slope: number } {
-  const n = x.length;
-  if (n < 2) {
-    throw new Error('Need at least 2 observations for regression');
-  }
-
-  const sumX = x.reduce((a, b) => a + b, 0);
-  const sumY = y.reduce((a, b) => a + b, 0);
-  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
-  const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
-
-  const meanX = sumX / n;
-  const meanY = sumY / n;
-
-  const slope = (sumXY - n * meanX * meanY) / (sumX2 - n * meanX * meanX);
-  const intercept = meanY - slope * meanX;
-
-  return { intercept, slope };
 }
 
 /**
@@ -178,68 +298,81 @@ export function predictDynamicEASIX(
 
   // Extract model parameters
   const fe = model.lme_model.fixed_effects;
+  const re = model.lme_model.random_effects;
+  const sigma2 = model.lme_model.residual_variance;
   const timeStd = model.lme_model.time_standardization;
 
   // Standardize time for all observations
+  const n = preLandmark.length;
   const days = preLandmark.map(obs => obs.day);
   const log2easixVals = preLandmark.map(obs => obs.log2easix);
   const tStd = days.map(d => standardizeTime(d));
 
-  // Step 1: Compute expected values from fixed effects
-  const expectedVals = tStd.map((t, i) =>
+  // Step 1: Compute expected values from fixed effects (Xβ)
+  // Fixed effects: intercept + time_slope * t + dri_coefficient * dri
+  const expectedVals = tStd.map(t =>
     fe.intercept + fe.time_slope * t + fe.dri_coefficient * dri
   );
 
-  // Step 2: Compute residuals from fixed effects
-  const residuals = log2easixVals.map((y, i) => y - expectedVals[i]);
+  // Step 2: Compute residuals from fixed effects (y - Xβ)
+  const residuals: Vector = log2easixVals.map((y, i) => y - expectedVals[i]);
 
-  // Step 3: Fit OLS to residuals to get empirical estimates
-  const { intercept: b0_ols, slope: b1_ols } = simpleLinearRegression(tStd, residuals);
+  // Step 3: Build the random effects design matrix Z (n × 2)
+  // Each row is [1, standardized_time] for random intercept + slope
+  const Z: Matrix = tStd.map(t => [1, t]);
+  const Zt = transpose(Z);  // Z' is (2 × n)
 
-  // Step 4: Apply empirical Bayes shrinkage
-  // BLUP shrinks OLS estimates toward 0 using variance components
-  // Shrinkage factor = signal variance / (signal variance + noise variance / n)
-  const n = preLandmark.length;
-  const re = model.lme_model.random_effects;
-  const sigma2 = model.lme_model.residual_variance;
+  // Step 4: Build the random effects covariance matrix G (2 × 2)
+  // G = [var_intercept,  cov_intercept_slope]
+  //     [cov_intercept_slope, var_slope     ]
+  const G: Matrix = [
+    [re.variance_intercept, re.covariance_intercept_slope],
+    [re.covariance_intercept_slope, re.variance_slope]
+  ];
 
-  // For intercept: shrinkage based on ratio of variances
-  const var_intercept = re.variance_intercept;
-  const shrink_intercept = var_intercept / (var_intercept + sigma2 / n);
-  const b0 = b0_ols * shrink_intercept;
+  // Step 5: Build the marginal variance matrix V = Z*G*Z' + σ²*I (n × n)
+  // V_ij = Z_i * G * Z_j' + σ² * δ_ij
+  const ZG = matrixMultiply(Z, G);       // n × 2
+  const ZGZt = matrixMultiply(ZG, Zt);   // n × n
+  const sigma2I = scalarMultiply(sigma2, eye(n));  // n × n
+  const V = matrixAdd(ZGZt, sigma2I);    // n × n
 
-  // For slope: shrinkage based on ratio of variances
-  const var_slope = re.variance_slope;
-  // Adjust for variance of standardized time predictor
-  const var_tStd = tStd.reduce((sum, t) => sum + t * t, 0) / n;
-  const shrink_slope = var_slope / (var_slope + sigma2 / (n * var_tStd));
-  const b1 = b1_ols * shrink_slope;
+  // Step 6: Compute BLUP of random effects
+  // b̂ = G * Z' * V⁻¹ * (y - Xβ)
+  const Vinv = matrixInverse(V);         // n × n
+  const GZt = matrixMultiply(G, Zt);     // 2 × n
+  const GZtVinv = matrixMultiply(GZt, Vinv);  // 2 × n
+  const b_hat = matrixVectorMultiply(GZtVinv, residuals);  // 2 × 1 vector
 
-  // Step 5: Predict log2EASIX at landmark
+  const b0 = b_hat[0];  // Random intercept
+  const b1 = b_hat[1];  // Random slope (on standardized time scale)
+
+  // Step 7: Predict log2EASIX at landmark
   const landmarkStd = standardizeTime(landmarkTime);
   const log2easix_at_landmark =
     fe.intercept + fe.time_slope * landmarkStd + fe.dri_coefficient * dri +
     b0 + b1 * landmarkStd;
 
-  // Step 6: Compute slope on original time scale
-  // slope_at_landmark = (β_time + b_time) / sd_time
-  const slope_at_landmark = (fe.time_slope + b1) / timeStd.sd!;
+  // Step 8: Compute slope on STANDARDIZED time scale
+  // The Cox model was trained with slopes on the standardized scale
+  // Total slope = fixed effect slope + random slope (both on standardized scale)
+  const slope_at_landmark = fe.time_slope + b1;
 
-  // Step 7: Compute linear predictor for Cox model
+  // Step 9: Compute linear predictor for Cox model
   const cox = model.cox_model.coefficients;
   const linear_predictor =
     cox.dri * dri +
     cox.log2easix_at_landmark * log2easix_at_landmark +
     cox.slope_at_landmark * slope_at_landmark;
 
-  // Step 8: Get baseline cumulative hazard at prediction horizon
+  // Step 10: Get baseline cumulative hazard at prediction horizon
   const H0_target = interpolateBaselineHazard(predictionHorizon);
 
-  // Step 9: Calculate survival probability
+  // Step 11: Calculate survival probability
   // S(t|xL) = exp(-H₀(t) × exp(LP))
   const survival_2yr = Math.exp(-H0_target * Math.exp(linear_predictor));
 
-  // Step 10: Calculate event rate
+  // Step 12: Calculate event rate
   const event_rate_2yr_percent = (1 - survival_2yr) * 100;
 
   return {

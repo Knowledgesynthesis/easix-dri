@@ -32,6 +32,7 @@ MODEL_IMPLEMENTATION_PLAN.md
 # R model fitting files (keep locally, don't push to GitHub)
 *.R
 *.rds
+*.rda
 *.xlsx
 dtrain.xlsx
 MODEL_FITTING_SUMMARY.md
@@ -43,6 +44,9 @@ robust_output.log
 .Rhistory
 *.RData
 *.Rproj
+
+# Debugging documentation (keep locally for reference)
+DEBUGGING_NOTES.md
 
 # Note: model_coefficients.json and validation_test_cases.json WILL be tracked
 # These are needed for the app to function
