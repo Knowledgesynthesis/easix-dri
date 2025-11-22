@@ -53,6 +53,7 @@ DEBUGGING_NOTES.md
 
 # Model coefficient backups (keep locally for reference)
 model_coefficients_original_backup.json
+model_coefficients_fresh.json
 *_backup.json
 
 AGENTS.md
