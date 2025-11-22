@@ -164,14 +164,13 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk prediction of 2-year Mortality Post Allogeneic Hematopoietic cell Transplantation</h1>
-                    <p className="mt-1 text-base text-cyan-300">Based on patients Dynamic-EASIX and DRI</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk Prediction of 2-Year Mortality Post Allogeneic Hematopoietic Cell Transplantation Based on Patient's Dynamic-EASIX and DRI</h1>
 
                     {/* Background Section */}
                     <div className="mt-4 bg-gray-800 p-4 rounded-lg shadow-lg text-left">
                         <h2 className="text-lg font-semibold text-white mb-2">Background</h2>
                         <p className="text-sm text-gray-300 leading-relaxed">
-                            Here, we provide a survival calculator for patients who have survived the early post-transplant period (approximately days 90–120) after allogeneic HCT. The model integrates the pre-transplant Disease Risk Index (DRI) with dynamic changes in the EASIX score from day 20 to day 120 to estimate individualized post-transplant survival.
+                            Here, we provide a survival calculator for patients who have survived the early post-transplant period (approximately days 90–120) after allogeneic HCT. The model integrates the pre-transplant Disease Risk Index (DRI) with dynamic changes in the Endothelial Activation Stress Index (EASIX) score from day 20 to day 120 to estimate individualized post-transplant survival.
                         </p>
                     </div>
                 </header>
