@@ -98,9 +98,10 @@ export const useEasixCalculation = (
 
     if (n >= 2 && driIndicator !== null) {
       try {
+        // Round log2easix to 2 decimal places to match Shiny app behavior
         const observations: PatientObservation[] = labPoints.map((point) => ({
           day: point.day,
-          log2easix: point.log2Easix,
+          log2easix: Math.round(point.log2Easix * 100) / 100,
         }));
 
         const dynamicResult = predictDynamicEASIX(observations, driIndicator);
