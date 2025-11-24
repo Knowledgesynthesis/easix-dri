@@ -48,7 +48,7 @@ export const Chart: React.FC<ChartProps> = ({ points, slope, intercept, width, h
             <text x={xScale(day)} y={height - PADDING.bottom + 20} textAnchor="middle" fill="currentColor">{day}</text>
           </g>
         ))}
-        <text x={PADDING.left + chartWidth / 2} y={height - 5} textAnchor="middle" fill="currentColor" className="font-semibold">Day since transplant</text>
+        <text x={PADDING.left + chartWidth / 2} y={height - 5} textAnchor="middle" fill="currentColor" className="font-semibold">Days since transplant</text>
         
         {/* Y Axis */}
         <line x1={PADDING.left} y1={PADDING.top} x2={PADDING.left} y2={height - PADDING.bottom} stroke="currentColor" />

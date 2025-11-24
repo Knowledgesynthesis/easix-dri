@@ -44,13 +44,13 @@ export const MiniGauge: React.FC<MiniGaugeProps> = ({ value, range, label, labTy
 
     // Outside normal range - check thresholds based on lab type
     if (labType === 'ldh') {
-      // LDH: Yellow 110-139 or 281-350, Red <110 or >350
-      if ((val >= 110 && val < refLow) || (val > refHigh && val <= 350)) {
+      // LDH: Yellow 100-121 or 223-350, Red <100 or >350
+      if ((val >= 100 && val < refLow) || (val > refHigh && val <= 350)) {
         return '#eab308'; // yellow-500
       }
       return '#ef4444'; // red-500
     } else if (labType === 'creatinine') {
-      // Creatinine: Yellow 0.4-0.59 or 1.31-1.8, Red <0.4 or >1.8
+      // Creatinine: Yellow 0.4-0.73 or 1.36-1.8, Red <0.4 or >1.8
       if ((val >= 0.4 && val < refLow) || (val > refHigh && val <= 1.8)) {
         return '#eab308'; // yellow-500
       }

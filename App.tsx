@@ -138,8 +138,8 @@ const App: React.FC = () => {
     };
     
     const getEventRateTone = (rate: number) => {
-        if (rate >= 40) return 'border-red-400 bg-red-500/10 text-red-100';
-        if (rate >= 20) return 'border-amber-400 bg-amber-500/10 text-amber-100';
+        if (rate >= 50) return 'border-red-400 bg-red-500/10 text-red-100';
+        if (rate >= 30) return 'border-amber-400 bg-amber-500/10 text-amber-100';
         return 'border-green-400 bg-green-500/10 text-green-100';
     };
 
@@ -164,13 +164,14 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-2 sm:p-3 lg:p-4">
             <div className="max-w-7xl mx-auto">
                 <header className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Risk Prediction of 2-Year Mortality Post Allogeneic Hematopoietic Cell Transplantation Based on Patient's Dynamic-EASIX and DRI</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">Dynamic-EASIX DRI Risk Prediction Model</h1>
+                    <p className="text-base sm:text-lg text-gray-300 mt-2">Risk Prediction of 2-Year Mortality Post Allogeneic Hematopoietic Cell Transplantation</p>
 
                     {/* Background Section */}
                     <div className="mt-4 bg-gray-800 p-4 rounded-lg shadow-lg text-left">
                         <h2 className="text-lg font-semibold text-white mb-2">Background</h2>
                         <p className="text-sm text-gray-300 leading-relaxed">
-                            Here, we provide a survival calculator for patients who have survived the early post-transplant period (approximately days 90–120) after allogeneic HCT. The model integrates the pre-transplant Disease Risk Index (DRI) with dynamic changes in the Endothelial Activation Stress Index (EASIX) score from day 20 to day 120 to estimate individualized post-transplant survival.
+                            Here, we provide a mortality estimating tool for adult patients who survived the early post-transplant period (approximately days 90–120) after allogeneic HCT. The model integrates the pre-transplant Disease Risk Index (DRI) with dynamic changes in the Endothelial Activation Stress Index (EASIX) score from day 20 to day 120 to estimate individualized post-transplant mortality.
                         </p>
                     </div>
                 </header>
@@ -193,7 +194,7 @@ const App: React.FC = () => {
 
                         {/* Lab Inputs */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold mb-2 text-white">2. Transplant Labs (Day +20 to +120)</h2>
+                            <h2 className="text-lg font-semibold mb-2 text-white">2. Post-Transplant Labs (Day +20 to +120)</h2>
                             <div className="space-y-2">
                                 {labRows.map((row) => (
                                     <div key={row.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-gray-900/50 p-2 rounded-md">
@@ -210,19 +211,19 @@ const App: React.FC = () => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-gray-400 mb-0.5">LDH (IU/L)</label>
+                                            <label className="block text-xs text-gray-400 mb-0.5">LDH (U/L)</label>
                                             <input type="number" value={row.ldh} onChange={e => updateRow(row.id, 'ldh', e.target.value)} placeholder="e.g. 250" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.ldh) || null} range={[140, 280]} label="Normal" labType="ldh" />
+                                            <MiniGauge value={parseFloat(row.ldh) || null} range={[122, 222]} label="Range" labType="ldh" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-400 mb-0.5">Creatinine (mg/dL)</label>
                                             <input type="number" step="0.1" value={row.creatinine} onChange={e => updateRow(row.id, 'creatinine', e.target.value)} placeholder="e.g. 0.9" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.creatinine) || null} range={[0.6, 1.3]} label="Normal" labType="creatinine" />
+                                            <MiniGauge value={parseFloat(row.creatinine) || null} range={[0.74, 1.35]} label="Range" labType="creatinine" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-400 mb-0.5">Platelets (×10⁹/L)</label>
                                             <input type="number" value={row.platelets} onChange={e => updateRow(row.id, 'platelets', e.target.value)} placeholder="e.g. 150" className="w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 text-sm p-1.5"/>
-                                            <MiniGauge value={parseFloat(row.platelets) || null} range={[150, 400]} label="Normal" labType="platelets" />
+                                            <MiniGauge value={parseFloat(row.platelets) || null} range={[150, 400]} label="Range" labType="platelets" />
                                         </div>
                                     </div>
                                 ))}
@@ -264,7 +265,7 @@ const App: React.FC = () => {
                         {/* Clinical Factors */}
                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold mb-2 text-white">
-                                3. Disease Risk Index (DRI) <span className="text-xs font-normal text-gray-400">(can be calculated <a href="https://cibmtr.org/CIBMTR/Resources/Research-Tools-Calculators/Disease-Risk-Index-DRI-Assignment-Tool" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">here</a>)</span>
+                                3. Disease Risk Index (DRI) <span className="text-xs font-normal text-gray-400">(click <a href="https://cibmtr.org/CIBMTR/Resources/Research-Tools-Calculators/Disease-Risk-Index-DRI-Assignment-Tool" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">here</a> to calculate)</span>
                             </h2>
                             <label htmlFor="dri" className="block text-xs font-medium text-gray-300 mb-0.5">
                                 High/Very High vs. Low/Intermediate (required for mortality rate prediction)
@@ -353,8 +354,11 @@ const App: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                         <div className="bg-gray-800 p-3 rounded-lg shadow-lg text-gray-400 text-xs space-y-3">
+                    {/* Full-width Disclaimers & Credits section spanning both columns */}
+                    <div className="lg:col-span-2">
+                        <div className="bg-gray-800 p-3 rounded-lg shadow-lg text-gray-400 text-xs space-y-3">
                             <h2 className="text-base font-semibold text-white">Disclaimers & Limitations</h2>
                             <div className="space-y-2">
                                 <p className="text-sm leading-relaxed text-gray-300">
@@ -366,10 +370,33 @@ const App: React.FC = () => {
                             </div>
                             <ul className="list-disc list-inside space-y-1">
                                 <li><strong>Abbreviations:</strong> EASIX = Endothelial Activation and Stress Index; DRI = Disease Risk Index; LME = Linear Mixed-Effects model</li>
+                                <li><strong>Adult Patients Only:</strong> This model is validated for use in adult patients and should not be applied to pediatric populations.</li>
                                 <li>The model outputs a <strong>predicted 2-year mortality rate</strong> derived from the dynamic landmark LME + Cox model documented in the manuscript.</li>
                                 <li>EASIX calculations can be confounded by platelet transfusions, acute kidney injury, or sparse sampling. More time points yield more stable predictions.</li>
                                 <li><strong>Privacy & Data Security:</strong> All data processing happens locally in your browser. Uploaded files and entered data are never sent to any server or stored anywhere. Everything remains on your device.</li>
                             </ul>
+
+                            <div className="pt-3 mt-3 border-t border-gray-700">
+                                <h2 className="text-base font-semibold text-white mb-2">Credits</h2>
+                                <div className="space-y-3 text-sm text-gray-300">
+                                    <p className="leading-relaxed">This web-app was developed and built by:</p>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="font-semibold">Bashar Hasan, MD</p>
+                                            <p className="text-xs">Evidence-Based Practice Center, Mayo Clinic, Rochester, MN</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">Anmol Baranwal, MD</p>
+                                            <p className="text-xs">Division of Hematology, Mayo Clinic Rochester, Rochester, MN</p>
+                                            <p className="text-xs">Division of Hematology, Rush University Medical Center, Chicago, IL</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">Hassan B. Alkhateeb, MD</p>
+                                            <p className="text-xs">Division of Hematology, Mayo Clinic Rochester, Rochester, MN</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </main>
